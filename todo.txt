@@ -1,0 +1,72 @@
+---------------------------------------------
+LINKS
+---------------------------------------------
+https://www.google.com/search?client=opera&q=sound+liblary+asio&sourceid=opera&ie=UTF-8&oe=UTF-8
+
+https://www.google.com/search?q=openal+simulate+guitar+string&client=opera&hs=pk3&sca_esv=570637999&ei=OkMdZaClD4bXkgXXm5DgAQ&ved=0ahUKEwigqr6YnNyBAxWGq6QKHdcNBBwQ4dUDCA8&uact=5&oq=openal+simulate+guitar+string&gs_lp=Egxnd3Mtd2l6LXNlcnAiHW9wZW5hbCBzaW11bGF0ZSBndWl0YXIgc3RyaW5nMgoQIRigARjDBBgKSLkRULsDWNMPcAF4AJABAJgBY6AByAaqAQIxMLgBA8gBAPgBAcICChAAGEcY1gQYsAPCAgUQABiiBMICCBAhGKABGMME4gMEGAAgQYgGAZAGBw&sclient=gws-wiz-serp#ip=1
+
+https://openal.opensource.creative.narkive.com/QtJeXxOH/how-to-generate-the-sound-in-low-level
+
+https://ffainelli.github.io/openal-example/
+
+https://www.youtube.com/watch?v=sxt5rxF_PdI
+
+https://www.cis.upenn.edu/~cis110/13sp/hw/hw07/guitar.shtml
+
+https://stackoverflow.com/questions/5044289/how-to-find-the-fundamental-frequency-of-a-guitar-string-sound
+
+https://etd.lib.metu.edu.tr/upload/12618426/index.pdf
+
+
+---------------------------------------------
+TECHNOLOGIE
+---------------------------------------------
+Render Kontrolek -> OpenGL,GLSL,IMGUI
+Okno -> GLFW
+Logger -> Spdlog
+Dzwięk -> OpenAL
+Other (to be removed) -> assimpm, glm
+
+---------------------------------------------
+Sprawozdanie 1
+---------------------------------------------
+Po wybraniu tematu 10 zdań w formie dokumentu
+to co mamy o danej symulacji.
+- parametry wejściowe
+- parametry wyjściowe
+- co dokładnie robi
+- z jakich narzędzi korzystamy
+
+	
+Symulacja dźwięku oparta na nakładaniu się popularnych efektów do Gitary na tzw. "sample".
+Wykorzystywane efekty to: Distortion, Reverb, Delay, Phaser, Chorus.
+Parametrami wejściowymi są wcześniej przygotowane "sample" dźwiękowe i odpowiednie ustawienia efektów i ich zakolejkowanie.
+Ustawienia efektów to np. wartości jak: opóźnienie, amplituda, głośność, częstotliwość, ilość sampli.
+Na wyjście otrzymujemy nowy dźwięk (falę) będący wynikiem sampla i zakolejkowanych efektów do gitary.
+W procesie symulacji wczytujemy próbkę fali a następnie zgodnie z założeniami efektu modyfikujemy wczytaną próbkę.
+Używane przez nas technologie to:
+	Render Kontrolek -> OpenGL, GLSL, IMGUI
+	Okno -> GLFW
+	Logger -> Spdlog
+	Dzwięk -> OpenAL
+
+
+---------------------------------------------
+Sprawozdanie 2
+---------------------------------------------
+- wyróżnić obiekty jakie biorą udział w symulacji
+- opisać przy pomocy zmiennych systemowych
+
+
+
+---------------------------------------------
+SAMPLE
+---------------------------------------------
+https://freesound.org/people/Kyster/packs/7398/
+https://freesound.org/people/nsauzede/sounds/363059/
+https://freesound.org/people/nsauzede/sounds/363058/
+https://freesound.org/people/nsauzede/sounds/363057/
+https://freesound.org/people/nsauzede/sounds/363056/
+https://freesound.org/people/nsauzede/sounds/363061/
+https://freesound.org/people/nsauzede/sounds/363060/
+https://archive.org/details/GuitarChord-A
