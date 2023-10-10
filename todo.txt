@@ -17,6 +17,20 @@ https://stackoverflow.com/questions/5044289/how-to-find-the-fundamental-frequenc
 
 https://etd.lib.metu.edu.tr/upload/12618426/index.pdf
 
+https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/
+
+
+----
+Guides
+----
+https://www.youtube.com/watch?v=WvND0djMcfE
+https://indiegamedev.net/2020/02/15/the-complete-guide-to-openal-with-c-part-1-playing-a-sound/
+
+-----
+Repos
+-----
+https://github.com/kcat/openal-soft
+https://github.com/adamstark/AudioFile
 
 ---------------------------------------------
 TECHNOLOGIE
@@ -25,6 +39,7 @@ Render Kontrolek -> OpenGL,GLSL,IMGUI
 Okno -> GLFW
 Logger -> Spdlog
 Dzwięk -> OpenAL
+Pliki dzwiękowe - > AudioFile
 Other (to be removed) -> assimpm, glm
 
 ---------------------------------------------
