@@ -6,6 +6,7 @@
 #include "imgui_impl/imgui_impl_glfw.h"
 #include "imgui_impl/imgui_impl_opengl3.h"
 #include <stdio.h>
+#include <iostream>
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
@@ -29,6 +30,35 @@ static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
+
+void applyDistortion()
+{
+    std::cout << "Distortion applied" << std::endl;
+    //something here
+}
+void applyReverb()
+{
+    std::cout << "Reverb applied" << std::endl;
+    //something here
+}
+void applyDelay()
+{
+    std::cout << "Delay applied" << std::endl;
+    //something here
+}
+void applyPhaser()
+{
+    std::cout << "Phaser applied" << std::endl;
+    //something here
+}
+void applyChorus()
+{
+    std::cout << "Chorus applied" << std::endl;
+    //something here
+}
+
+
+
 
 int main(int, char**)
 {
@@ -105,10 +135,19 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    bool show_demo_window = true;
-    bool show_another_window = false;
+    bool show_demo_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    bool isActive_distortion = false; 
+    int distortion_Priority = 1;
+    bool isActive_reverb = false;
+    int reverb_Priority = 2;
+    bool isActive_delay = false;
+    int delay_Priority = 3;
+    bool isActive_phaser = false;    
+    int phaser_Priority = 4;
+    bool isActive_chorus = false; 
+    int chorus_Priority = 5;
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -128,17 +167,22 @@ int main(int, char**)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
+
+       
+
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             static float f = 0.0f;
             static int counter = 0;
+            
+            ImGui::Begin("Audio Effects");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
             ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
+            ImGui::Checkbox("Distortion Effect Window", &isActive_distortion);
+            ImGui::Checkbox("Reverb Effect Window", &isActive_reverb);
+            ImGui::Checkbox("Delay Effect Window", &isActive_delay);
+            ImGui::Checkbox("Phaser Effect Window", &isActive_phaser);
+            ImGui::Checkbox("Chorus Effect Window", &isActive_chorus);
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
@@ -146,20 +190,94 @@ int main(int, char**)
                 counter++;
             ImGui::SameLine();
             ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            if (ImGui::Button("Apply Effects"))
+            {
+                for (int i = 1; i <= 5; ++i) {
+                    switch (i) {
+                    case 1:
+                        if (distortion_Priority == i && isActive_distortion) applyDistortion();
+                        if (reverb_Priority == i && isActive_reverb) applyReverb();
+                        if (delay_Priority == i && isActive_delay) applyDelay();
+                        if (phaser_Priority == i && isActive_phaser) applyPhaser();
+                        if (chorus_Priority == i && isActive_chorus) applyChorus();
+                        break;
+                    case 2:
+                        if (distortion_Priority == i && isActive_distortion) applyDistortion();
+                        if (reverb_Priority == i && isActive_reverb) applyReverb();
+                        if (delay_Priority == i && isActive_delay) applyDelay();
+                        if (phaser_Priority == i && isActive_phaser) applyPhaser();
+                        if (chorus_Priority == i && isActive_chorus) applyChorus();
+                        break;
+                    case 3:
+                        if (distortion_Priority == i && isActive_distortion) applyDistortion();
+                        if (reverb_Priority == i && isActive_reverb) applyReverb();
+                        if (delay_Priority == i && isActive_delay) applyDelay();
+                        if (phaser_Priority == i && isActive_phaser) applyPhaser();
+                        if (chorus_Priority == i && isActive_chorus) applyChorus();
+                        break;
+                    case 4:
+                        if (distortion_Priority == i && isActive_distortion) applyDistortion();
+                        if (reverb_Priority == i && isActive_reverb) applyReverb();
+                        if (delay_Priority == i && isActive_delay) applyDelay();
+                        if (phaser_Priority == i && isActive_phaser) applyPhaser();
+                        if (chorus_Priority == i && isActive_chorus) applyChorus();
+                        break;
+                    case 5:
+                        if (distortion_Priority == i && isActive_distortion) applyDistortion();
+                        if (reverb_Priority == i && isActive_reverb) applyReverb();
+                        if (delay_Priority == i && isActive_delay) applyDelay();
+                        if (phaser_Priority == i && isActive_phaser) applyPhaser();
+                        if (chorus_Priority == i && isActive_chorus) applyChorus();
+                        break;
+                    }
+                }
+            }
+            if (ImGui::Button("Play Audio"))  
+                counter++;//playing audio function
             ImGui::End();
         }
 
-        // 3. Show another simple window.
-        if (show_another_window)
+        // Show distortion effect window.
+        if (isActive_distortion)
         {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
+            ImGui::Begin("Distortion", &isActive_distortion);  
+            ImGui::Text("Adjust distortion parameters");
+            ImGui::SliderInt("Effect Priority", &distortion_Priority, 1, 5);
+            ImGui::End();
+        }        
+        // Show reverb effect window.
+        if (isActive_reverb)
+        {
+            ImGui::Begin("Reverb", &isActive_reverb);  
+            ImGui::Text("Adjust reverb parameters"); 
+            ImGui::SliderInt("Effect Priority", &reverb_Priority, 1, 5);
             ImGui::End();
         }
+        // Show delay effect window.
+        if (isActive_delay)
+        {
+            ImGui::Begin("Delay", &isActive_delay);   
+            ImGui::Text("Adjust delay parameters");
+            ImGui::SliderInt("Effect Priority", &delay_Priority, 1, 5);
+            ImGui::End();
+        }
+        // Show phaser effect window.
+        if (isActive_phaser)
+        {
+            ImGui::Begin("Phaser", &isActive_phaser);  
+            ImGui::Text("Adjust phaser parameters");
+            ImGui::SliderInt("Effect Priority", &phaser_Priority, 1, 5);
+            ImGui::End();
+        }
+        // Show chorus effect window.
+        if (isActive_chorus)
+        {
+            ImGui::Begin("Chorus", &isActive_chorus);  
+            ImGui::Text("Adjust chorus parameters");
+            ImGui::SliderInt("Effect Priority", &chorus_Priority, 1, 5);
+            ImGui::End();
+        }
+
 
         // Rendering
         ImGui::Render();
