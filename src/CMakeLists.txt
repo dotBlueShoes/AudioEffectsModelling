@@ -15,11 +15,14 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE GLFW_INCLUDE_NONE)
 target_compile_definitions(${PROJECT_NAME} PRIVATE LIBRARY_SUFFIX="")
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+
+${dr_libs_SOURCE_DIR}
 												  ${glad_SOURCE_DIR}
 												  ${stb_image_SOURCE_DIR}
 												  ${imgui_SOURCE_DIR})
 
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} OpenAL::OpenAL)
 target_link_libraries(${PROJECT_NAME} glad)
 target_link_libraries(${PROJECT_NAME} stb_image)
 target_link_libraries(${PROJECT_NAME} assimp)
@@ -27,11 +30,20 @@ target_link_libraries(${PROJECT_NAME} glfw)
 target_link_libraries(${PROJECT_NAME} imgui)
 target_link_libraries(${PROJECT_NAME} spdlog)
 target_link_libraries(${PROJECT_NAME} glm::glm)
+target_link_libraries(${PROJECT_NAME} dr_libs)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
 				   COMMAND ${CMAKE_COMMAND} -E create_symlink 
 				   ${CMAKE_SOURCE_DIR}/res 
 				   ${CMAKE_CURRENT_BINARY_DIR}/res)
+
+set_target_properties(OpenAL
+        PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+set_target_properties(OpenAL
+        PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 if(MSVC)
     target_compile_definitions(${PROJECT_NAME} PUBLIC NOMINMAX)

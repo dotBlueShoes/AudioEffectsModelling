@@ -8,6 +8,11 @@
 #include <stdio.h>
 #include <iostream>
 
+#include <al.h>
+#include <alc.h>
+
+#include <dr_wav.h>
+
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually. 
@@ -66,6 +71,8 @@ int main(int, char**)
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
+
+    ALuint sample = 0;
 
     // Decide GL+GLSL versions
 #if __APPLE__

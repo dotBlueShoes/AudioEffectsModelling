@@ -16,7 +16,14 @@ set(stb_image_SOURCE_DIR ${STB_IMAGE_DIR} CACHE INTERNAL "")
 add_library(stb_image STATIC ${STB_IMAGE_DIR}/stb_image.cpp)
 target_include_directories(stb_image PRIVATE ${STB_IMAGE_DIR})
 
+# dr_libs
+set(DR_LIBS_DIR ${CMAKE_CURRENT_LIST_DIR}/dr_libs)
+set(dr_libs_SOURCE_DIR ${DR_LIBS_DIR} CACHE INTERNAL "")
+add_library(dr_libs STATIC ${DR_LIBS_DIR}/dr_wav_impl.cpp)
+target_include_directories(dr_libs PRIVATE ${DR_LIBS_DIR})
+
 # other
+CPMAddPackage("gh:kcat/openal-soft#1.23.1")
 CPMAddPackage("gh:assimp/assimp@5.2.5")
 CPMAddPackage("gh:glfw/glfw#3.3.8")
 CPMAddPackage("gh:g-truc/glm#0.9.9.8")
@@ -30,7 +37,9 @@ add_library(imgui STATIC ${imgui_SOURCE_DIR}/imgui.cpp
 						 ${imgui_SOURCE_DIR}/imgui_tables.cpp
 					     ${imgui_SOURCE_DIR}/imgui_widgets.cpp)
 						 
-set_target_properties(glad
+set_target_properties(OpenAL
+		      dr_libs
+		      glad
                       stb_image 
                       assimp 
                       glfw 
