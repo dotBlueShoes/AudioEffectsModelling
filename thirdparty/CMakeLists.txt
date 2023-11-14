@@ -19,7 +19,7 @@ target_include_directories(stb_image PRIVATE ${STB_IMAGE_DIR})
 # dr_libs
 set(DR_LIBS_DIR ${CMAKE_CURRENT_LIST_DIR}/dr_libs)
 set(dr_libs_SOURCE_DIR ${DR_LIBS_DIR} CACHE INTERNAL "")
-add_library(dr_libs STATIC ${DR_LIBS_DIR}/dr_wav_impl.cpp)
+add_library(dr_libs STATIC ${DR_LIBS_DIR}/dr_wav_impl.c)
 target_include_directories(dr_libs PRIVATE ${DR_LIBS_DIR})
 
 # other
