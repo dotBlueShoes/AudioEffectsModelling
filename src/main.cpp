@@ -5,6 +5,8 @@
 #include "Audio/SoundIO.hpp"
 #include "Audio/Display.hpp"
 
+#include "Audio/Effects/Effects.hpp"
+
 
 static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -146,6 +148,8 @@ namespace Controls {
             const array<char, 11> controlBase { "Sample XYZ" };
             const int32_t reserved_chars = 7;
 
+            ImGui::Text("Nylon Strings");
+
             for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
 
                 // Format Control Name
@@ -158,8 +162,8 @@ namespace Controls {
                 }
             }
 
+            ImGui::Text("Dry Settings");
 
-            //ImGui::Text("Input Dry Gain");
             if (ImGui::SliderFloat("Gain", &drawCallParams.gain, 0, OpenAL::MAX_GAIN)) {
 
                 for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
@@ -169,7 +173,6 @@ namespace Controls {
 
             }
 
-            //ImGui::Text("Input Dry Pitch");
             if (ImGui::SliderFloat("Pitch", &drawCallParams.pitch, 0, 10)) {
 
                 for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
@@ -184,9 +187,74 @@ namespace Controls {
         ImGui::End();
     }
 
+    vector<int> effects_queue;
+
     auto DrawEffectQueue() {
+
         const char STRING_EFFECT_QUEUE[] = "Effect Queue";
+
+        const array<char, 11> controlBase { "Effect XYZ" };
+        const int32_t reserved_chars = 7;
+
+        int isGoingToBeRemoved = -1;
+
         ImGui::Begin(STRING_EFFECT_QUEUE);
+
+        if (ImGui::Button("Clear Effects")) {
+            effects_queue.clear();
+        }
+
+        for (size_t i = 0; i < effects_queue.size(); ++i) {
+
+            const char* items[] = { "Remove", Effects::STRING_DISTORTION, Effects::STRING_DELAY, Effects::STRING_PHASER, Effects::STRING_CHORUS, Effects::STRING_REVERB};
+            //static int item_current_idx = 0; // Here we store our selection data as an index.
+
+            const ImVec2 listboxSize(200, 3.5 * ImGui::GetTextLineHeightWithSpacing());
+
+
+            // Format Control Name
+            array<char, 11> controlName = controlBase;
+            auto result = std::to_chars(controlName.data() + reserved_chars, controlName.data() + controlName.size(), i + 1, 10);
+            *(result.ptr) = '\0';
+
+
+            if (ImGui::BeginListBox(controlName.data(), listboxSize)) {
+                for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
+                    const bool is_selected = (effects_queue[i] == n);
+
+                    if (ImGui::Selectable(items[n], is_selected)) {
+
+                        // replace with switch 
+                        //  as not only queue is being formed here.
+                        // but also additional windows for each effect should be shown/changed with selection.
+
+                        if (n == 0) {
+                            // We cannot remove an object we're iterating through...
+                            //  So it has to happen later.
+                            isGoingToBeRemoved = i;
+                        } else {
+                            effects_queue[i] = n;
+                        }
+
+                    }
+
+                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                    //if (is_selected) ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndListBox();
+            }
+        }
+
+        if (isGoingToBeRemoved >= 0) {
+            effects_queue.erase(effects_queue.begin() + isGoingToBeRemoved);
+            isGoingToBeRemoved = -1;
+        }
+
+        if (ImGui::Button("Add Effect")) {
+            effects_queue.push_back(1);
+        }
+
         ImGui::End();
     }
 
