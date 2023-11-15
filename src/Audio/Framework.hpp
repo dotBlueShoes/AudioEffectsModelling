@@ -7,7 +7,12 @@
 #include <iostream>
 #include <vector>
 #include <bitset>
+#include <array>
 
+
+using std::vector;
+using std::bitset;
+using std::array;
 
 // CONSTANTS
 
@@ -17,7 +22,7 @@ const char OPENAL_ERROR[] = "OpenAL Error: ";
 const int32_t FAILURE = -1;
 const int32_t SUCCESS = 0;
 
-#define RES_SOUNDS "sounds/"
+#define RES_SOUNDS "res/sounds/"
 #define RES_SAMPLES "samples/"
 #define RES_ELECTRIC "electric_string/"
 #define RES_NYLON "nylon_string/"
@@ -35,6 +40,16 @@ namespace SOUNDS {
 	const char ELECTRIC_4D3[] = RES_SOUNDS RES_ELECTRIC "4_d3.wav";
 	const char ELECTRIC_5A2[] = RES_SOUNDS RES_ELECTRIC "5_a2.wav";
 	const char ELECTRIC_6E2[] = RES_SOUNDS RES_ELECTRIC "6_e2.wav";
+
+
+	const array<const char*, 6> SOUND_FILES {
+		ELECTRIC_6E2,
+		ELECTRIC_5A2,
+		ELECTRIC_4D3,
+		ELECTRIC_3G3,
+		ELECTRIC_2B3,
+		ELECTRIC_1E4,
+	};
 
 }
 
