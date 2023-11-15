@@ -261,6 +261,89 @@ namespace Controls {
     auto DrawEffectBasicDelay() {
         const char STRING_EFFECT_BASIC_DELAY[] = "Effect Basic Delay";
         ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
+
+        static float feedback = 0;
+        static int delay = 0;
+
+        ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
+        ImGui::SliderInt("Delay [ms]", &delay, 0, 1000);
+
+        ImGui::End();
+    }
+
+    auto DrawEffectReverb() {
+        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Reverb";
+        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
+
+        static int delay1 = 0;
+        static int delay2 = 0;
+        static int delay3 = 0;
+        static int delay4 = 0;
+
+        ImGui::SliderInt("Delay 1 [-]", &delay1, 0, 4000);
+        ImGui::SliderInt("Delay 2 [-]", &delay2, 0, 4000);
+        ImGui::SliderInt("Delay 3 [-]", &delay3, 0, 4000);
+        ImGui::SliderInt("Delay 4 [-]", &delay4, 0, 4000);
+
+        ImGui::End();
+    }
+
+    auto DrawEffectChorus() {
+        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Chorus";
+        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
+
+        static int delay = 0;
+        static int depth = 0;
+        static int sampleRate = 0;
+        static float feedback = 0;
+        static int wet = 0;
+        static int dry = 0;
+
+        ImGui::SliderInt("Delay [ms]", &delay, 0, 1000);
+        ImGui::SliderInt("Depth [ms]", &depth, 0, 1000);
+        ImGui::SliderInt("SampleRate [Hz]", &sampleRate, 0, 1000);
+        ImGui::SliderFloat("Feedback [%]", &feedback, 0, 1000);
+        ImGui::SliderInt("Wet [dB]", &wet, -32, 32);
+        ImGui::SliderInt("Dry [dB]", &dry, -32, 32);
+
+        ImGui::End();
+    }
+
+    auto DrawEffectDistortion() {
+        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Distortion";
+        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
+
+        static int type = 0;
+        static float gain = 0;
+        static int dry = 0;
+        static int wet = 0;
+
+        ImGui::SliderInt("Type [0, 1]", &type, 0, 1);
+        ImGui::SliderFloat("Gain [-]", &gain, 0, 10);
+        ImGui::SliderInt("Dry [dB]", &dry, -32, 32);
+        ImGui::SliderInt("Wet [dB]", &wet, -32, 32);
+
+        ImGui::End();
+    }
+
+    auto DrawEffectPhaser() {
+        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Phaser";
+        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
+
+        static float feedback = 0;
+        static int rate = 0;
+        static float depth = 0;
+        static float offset = 0;
+        static float intensity = 0;
+        static int stages = 0;
+
+        ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
+        ImGui::SliderInt("Rate [ms]", &rate, 0, 1000);
+        ImGui::SliderFloat("Depth [%]", &depth, 0, 100);
+        ImGui::SliderFloat("Offset [-]", &offset, -1.0, 1.0);
+        ImGui::SliderFloat("Intensity [%]", &intensity, 0, 100);
+        ImGui::SliderInt("Stages [ms]", &stages, 1, 3);
+
         ImGui::End();
     }
 
@@ -268,6 +351,12 @@ namespace Controls {
 
         DrawSampleSelection(drawCallParams);
         DrawEffectQueue();
+
+        DrawEffectBasicDelay();
+        DrawEffectReverb();
+        DrawEffectChorus();
+        DrawEffectDistortion();
+        DrawEffectPhaser();
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         //{
