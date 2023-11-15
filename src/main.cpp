@@ -37,7 +37,7 @@ void applyChorus() {
 
 
 
-auto InitializeWindow() {
+auto InitializeWindowRender() {
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -97,7 +97,7 @@ auto InitializeWindow() {
 }
 
 
-auto DestroyWindow(GLFWwindow* window) {
+auto DestroyWindowRender(GLFWwindow* window) {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -109,6 +109,19 @@ auto DestroyWindow(GLFWwindow* window) {
 
 
 namespace Controls {
+
+
+    struct DrawCallParams {
+        // Window draw
+        ImVec4 backgroundColor;
+        // Sounds
+        size_t soundsCount;
+        ALuint* sounds;
+        ALuint* sources;
+        ALint sourceState;
+        float pitch, gain;
+    };
+
 
     //bool show_demo_window = false;
     //bool isActive_distortion = false;
@@ -125,22 +138,47 @@ namespace Controls {
 
     bool isPlaying = false;
 
-    auto DrawSampleSelection() {
+    void DrawSampleSelection(DrawCallParams& drawCallParams) {
         const char STRING_SAMPLE_SELECTION[] = "Sample Selection";
         ImGui::Begin(STRING_SAMPLE_SELECTION);
 
         {
-            if (ImGui::Button("Sample 1")) {
+            const array<char, 11> controlBase { "Sample XYZ" };
+            const int32_t reserved_chars = 7;
+
+            for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
+
+                // Format Control Name
+                array<char, 11> controlName = controlBase;
+                auto result = std::to_chars(controlName.data() + reserved_chars, controlName.data() + controlName.size(), i + 1, 10);
+                *(result.ptr) = '\0';
+
+                if (ImGui::Button(controlName.data())) {
+                    OpenAL::PlaySound(drawCallParams.sources[i], drawCallParams.sourceState);
+                }
+            }
+
+
+            //ImGui::Text("Input Dry Gain");
+            if (ImGui::SliderFloat("Gain", &drawCallParams.gain, 0, OpenAL::MAX_GAIN)) {
+
+                for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
+                    alSourcef(drawCallParams.sounds[i], AL_GAIN, drawCallParams.gain);
+                    OpenAL::CheckError("Gain");
+                }
 
             }
 
-            if (ImGui::Button("Sample 2")) {
+            //ImGui::Text("Input Dry Pitch");
+            if (ImGui::SliderFloat("Pitch", &drawCallParams.pitch, 0, 10)) {
+
+                for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
+                    alSourcef(drawCallParams.sounds[i], AL_PITCH, drawCallParams.pitch);
+                    OpenAL::CheckError("Pitch");
+                }
 
             }
 
-            if (ImGui::Button("Sample 3")) {
-
-            }
         }
 
         ImGui::End();
@@ -158,9 +196,9 @@ namespace Controls {
         ImGui::End();
     }
 
-    auto DrawCall(const ImVec4& backgroundColor) {
+    auto DrawCall(DrawCallParams& drawCallParams) {
 
-        DrawSampleSelection();
+        DrawSampleSelection(drawCallParams);
         DrawEffectQueue();
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
@@ -273,7 +311,7 @@ namespace Controls {
 
 int main(int, char**) {
 
-    GLFWwindow* window = InitializeWindow();
+    GLFWwindow* window = InitializeWindowRender();
     const ImVec4 backgroundColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 
@@ -293,7 +331,7 @@ int main(int, char**) {
     OpenAL::CreateListener3D();
     
 
-    const float dryPitch = 1.0f, dryGain = 1.0f;
+    const float pitch = 1.0f, gain = 1.0f;
 
     //{ // Display Sound Buffor data.
     //    std::cout << "SR: " << monoData.sampleRate << std::endl;
@@ -307,12 +345,15 @@ int main(int, char**) {
     //    //Display::PrintFromTo(monoData.pcm.data(), 20);
     //}
 
+
     // Prepere space for sound buffers.
     array<ALuint, SOUNDS::SOUND_FILES.size()> monoSoundBuffers { NULL };
+
 
     // Prepere space for source buffers.
     array<ALuint, SOUNDS::SOUND_FILES.size()> monoSourceBuffers { NULL };
     
+
     // Read .wav file.
     for (size_t i = 0; i < SOUNDS::SOUND_FILES.size(); ++i) {
         SoundIO::ReadWavData monoData;
@@ -322,28 +363,46 @@ int main(int, char**) {
         monoSoundBuffers[i] = OpenAL::CreateMonoSound(monoData);
 
         // Load a sound source for mono.
-        monoSourceBuffers[i] = OpenAL::CreateMonoSource(monoSoundBuffers[i], false, dryPitch, dryGain);
+        monoSourceBuffers[i] = OpenAL::CreateMonoSource(monoSoundBuffers[i], false, pitch, gain);
     }
 
 
-    ALint sourceState;
+    for (auto&& sound : monoSoundBuffers) {
+        alSourcef(sound, AL_MAX_GAIN, OpenAL::MAX_GAIN);
+        OpenAL::CheckError("MaxGain");
+    }
+    
 
 
-    // Play mono sound.
-    OpenAL::PlaySound(monoSourceBuffers[0], sourceState);
+    ALint sourceState = NULL;
 
 
-    // Change values mid
-    alSourcef(monoSoundBuffers[0], AL_MAX_GAIN, 2.0f);
-    OpenAL::CheckError("1");
-    alSourcef(monoSoundBuffers[0], AL_GAIN, 2.0f);
-    OpenAL::CheckError("2");
-    alSourcef(monoSoundBuffers[0], AL_PITCH, 1.2f);
-    OpenAL::CheckError("3");
+    Controls::DrawCallParams drawCallParams {
+        backgroundColor,
+        SOUNDS::SOUND_FILES.size(),
+        monoSoundBuffers.data(),
+        monoSourceBuffers.data(),
+        sourceState,
+        pitch,
+        gain
+    };
 
 
-    // Play it again with changed values.
-    OpenAL::PlaySound(monoSourceBuffers[0], sourceState);
+    //// Play mono sound.
+    //OpenAL::PlaySound(monoSourceBuffers[0], sourceState);
+    //
+    //
+    //// Change values mid
+    //alSourcef(monoSoundBuffers[0], AL_MAX_GAIN, 2.0f);
+    //OpenAL::CheckError("1");
+    //alSourcef(monoSoundBuffers[0], AL_GAIN, 2.0f);
+    //OpenAL::CheckError("2");
+    //alSourcef(monoSoundBuffers[0], AL_PITCH, 1.2f);
+    //OpenAL::CheckError("3");
+    //
+    //
+    //// Play it again with changed values.
+    //OpenAL::PlaySound(monoSourceBuffers[0], sourceState);
 
 
     // Main loop
@@ -360,7 +419,7 @@ int main(int, char**) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        Controls::DrawCall(backgroundColor);
+        Controls::DrawCall(drawCallParams);
 
         // Rendering
         ImGui::Render();
@@ -389,7 +448,7 @@ int main(int, char**) {
     OpenAL::DestoryContext(context);
     OpenAL::DestoryDevice(device);
 
-    DestroyWindow(window);
+    DestroyWindowRender(window);
 
     return 0;
 }

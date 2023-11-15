@@ -18,6 +18,8 @@
 
 namespace OpenAL {
 
+    const float MAX_GAIN = 10.0f;
+
     auto CheckError(
         const char* message
     ) {
@@ -184,7 +186,7 @@ namespace OpenAL {
         return stereoSource;
     }
 
-    auto PlaySound(ALuint source, ALint& sourceState) {
+    auto PlaySound(const ALuint& source, ALint& sourceState) {
 
         alSourcePlay(source);
         OpenAL::CheckError("13");

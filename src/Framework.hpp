@@ -9,6 +9,7 @@
 #include "imgui_impl/imgui_impl_opengl3.h"
 #include <stdio.h>
 
+
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually. 
@@ -24,5 +25,9 @@
 #include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #endif
 
+
 #include <GLFW/glfw3.h> // Include glfw3.h after our OpenGL definitions
 #include <spdlog/spdlog.h>
+
+
+#include <charconv>
