@@ -125,18 +125,6 @@ namespace Controls {
     };
 
 
-    //bool show_demo_window = false;
-    //bool isActive_distortion = false;
-    //int distortion_Priority = 1;
-    //bool isActive_reverb = false;
-    //int reverb_Priority = 2;
-    //bool isActive_delay = false;
-    //int delay_Priority = 3;
-    //bool isActive_phaser = false;
-    //int phaser_Priority = 4;
-    //bool isActive_chorus = false;
-    //int chorus_Priority = 5;
-
 
     bool isPlaying = false;
 
