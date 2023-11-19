@@ -4,7 +4,18 @@
 #include "Audio/OpenAl.hpp"
 #include "Audio/SoundIO.hpp"
 #include "Audio/Display.hpp"
-
+#include "imgui.h"
+#include "imgui_impl/imgui_impl_glfw.h"
+#include "imgui_impl/imgui_impl_opengl3.h"
+#include <stdio.h>
+#include <iostream>
+#include <vector>
+#include "../include/AudioEffect.h"
+#include "../include/DelayAudioEffect.h"
+#include "../include/DistortionAudioEffect.h"
+#include "../include/ChorusAudioEffect.h"
+#include "../include/PhaserAudioEffect.h"
+#include "../include/ReverbAudioEffect.h"
 #include "Audio/Effects/Effects.hpp"
 
 
@@ -124,58 +135,44 @@ namespace Controls {
         float pitch, gain;
     };
 
-
-
     bool isPlaying = false;
-
     void DrawSampleSelection(DrawCallParams& drawCallParams) {
         const char STRING_SAMPLE_SELECTION[] = "Sample Selection";
         ImGui::Begin(STRING_SAMPLE_SELECTION);
-
         {
-            const array<char, 11> controlBase { "Sample XYZ" };
+            const array<char, 11> controlBase{ "Sample XYZ" };
             const int32_t reserved_chars = 7;
-
             ImGui::Text("Nylon Strings");
-
             for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
-
                 // Format Control Name
                 array<char, 11> controlName = controlBase;
                 auto result = std::to_chars(controlName.data() + reserved_chars, controlName.data() + controlName.size(), i + 1, 10);
                 *(result.ptr) = '\0';
-
                 if (ImGui::Button(controlName.data())) {
                     OpenAL::PlaySound(drawCallParams.sources[i], drawCallParams.sourceState);
                 }
             }
-
             ImGui::Text("Dry Settings");
-
             if (ImGui::SliderFloat("Gain", &drawCallParams.gain, 0, OpenAL::MAX_GAIN)) {
-
                 for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
                     alSourcef(drawCallParams.sounds[i], AL_GAIN, drawCallParams.gain);
                     OpenAL::CheckError("Gain");
                 }
-
             }
-
             if (ImGui::SliderFloat("Pitch", &drawCallParams.pitch, 0, 10)) {
-
                 for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
                     alSourcef(drawCallParams.sounds[i], AL_PITCH, drawCallParams.pitch);
                     OpenAL::CheckError("Pitch");
                 }
-
             }
-
         }
-
         ImGui::End();
     }
 
+
+
     vector<int> effects_queue;
+    std::vector<std::unique_ptr<AudioEffect>> effects_queue_temp;
 
     auto DrawEffectQueue() {
 
@@ -211,16 +208,33 @@ namespace Controls {
                     const bool is_selected = (effects_queue[i] == n);
 
                     if (ImGui::Selectable(items[n], is_selected)) {
-
+                        switch (n)
+                        {
+                        case 0:
+                            isGoingToBeRemoved = i;
+                            break;
+                        case 1:
+                            effects_queue_temp[i] = std::make_unique<DistortionAudioEffect>();
+                            break;
+                        case 2:
+                            effects_queue_temp[i] = std::make_unique<DelayAudioEffect>();
+                            break;
+                        case 3:
+                            effects_queue_temp[i] = std::make_unique<PhaserAudioEffect>();
+                            break;
+                        case 4:
+                            effects_queue_temp[i] = std::make_unique<ChorusAudioEffect>();
+                            break;
+                        case 5:
+                            effects_queue_temp[i] = std::make_unique<ReverbAudioEffect>();
+                            break;
+                        }
+                        effects_queue_temp[i]->setWindowNumber(i);
                         // replace with switch 
                         //  as not only queue is being formed here.
                         // but also additional windows for each effect should be shown/changed with selection.
 
-                        if (n == 0) {
-                            // We cannot remove an object we're iterating through...
-                            //  So it has to happen later.
-                            isGoingToBeRemoved = i;
-                        } else {
+                        if (n != 0) {
                             effects_queue[i] = n;
                         }
 
@@ -236,11 +250,14 @@ namespace Controls {
 
         if (isGoingToBeRemoved >= 0) {
             effects_queue.erase(effects_queue.begin() + isGoingToBeRemoved);
+            effects_queue_temp.erase(effects_queue_temp.begin() + isGoingToBeRemoved);
             isGoingToBeRemoved = -1;
         }
 
         if (ImGui::Button("Add Effect")) {
             effects_queue.push_back(1);
+            effects_queue_temp.push_back(std::make_unique<DistortionAudioEffect>());
+            effects_queue_temp.back()->setWindowNumber(effects_queue_temp.size()-1);
         }
 
         ImGui::End();
@@ -339,116 +356,15 @@ namespace Controls {
 
         DrawSampleSelection(drawCallParams);
         DrawEffectQueue();
+        for (auto& effect : effects_queue_temp) {
+            effect->DisplayEffectWindow();
+        }
+       // DrawEffectBasicDelay();
+       // DrawEffectReverb();
+       // DrawEffectChorus();
+       // DrawEffectDistortion();
+       // DrawEffectPhaser();
 
-        DrawEffectBasicDelay();
-        DrawEffectReverb();
-        DrawEffectChorus();
-        DrawEffectDistortion();
-        DrawEffectPhaser();
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-        //{
-        //    static float f = 0.0f;
-        //    static int counter = 0;
-        //
-        //    
-        //
-        //    ImGui::Begin("Audio Effects");                          // Create a window called "Hello, world!" and append into it.
-        //
-        //    //ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        //    ImGui::Checkbox("Distortion Effect Window", &isActive_distortion);
-        //    ImGui::Checkbox("Reverb Effect Window", &isActive_reverb);
-        //    ImGui::Checkbox("Delay Effect Window", &isActive_delay);
-        //    ImGui::Checkbox("Phaser Effect Window", &isActive_phaser);
-        //    ImGui::Checkbox("Chorus Effect Window", &isActive_chorus);
-        //    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-        //    ImGui::ColorEdit3("clear color", (float*)&backgroundColor); // Edit 3 floats representing a color
-        //
-        //    if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-        //        counter++;
-        //    ImGui::SameLine();
-        //    ImGui::Text("counter = %d", counter);
-        //    if (ImGui::Button("Apply Effects")) {
-        //        for (int i = 1; i <= 5; ++i) {
-        //            switch (i) {
-        //                case 1:
-        //                    if (distortion_Priority == i && isActive_distortion) applyDistortion();
-        //                    if (reverb_Priority == i && isActive_reverb) applyReverb();
-        //                    if (delay_Priority == i && isActive_delay) applyDelay();
-        //                    if (phaser_Priority == i && isActive_phaser) applyPhaser();
-        //                    if (chorus_Priority == i && isActive_chorus) applyChorus();
-        //                    break;
-        //                case 2:
-        //                    if (distortion_Priority == i && isActive_distortion) applyDistortion();
-        //                    if (reverb_Priority == i && isActive_reverb) applyReverb();
-        //                    if (delay_Priority == i && isActive_delay) applyDelay();
-        //                    if (phaser_Priority == i && isActive_phaser) applyPhaser();
-        //                    if (chorus_Priority == i && isActive_chorus) applyChorus();
-        //                    break;
-        //                case 3:
-        //                    if (distortion_Priority == i && isActive_distortion) applyDistortion();
-        //                    if (reverb_Priority == i && isActive_reverb) applyReverb();
-        //                    if (delay_Priority == i && isActive_delay) applyDelay();
-        //                    if (phaser_Priority == i && isActive_phaser) applyPhaser();
-        //                    if (chorus_Priority == i && isActive_chorus) applyChorus();
-        //                    break;
-        //                case 4:
-        //                    if (distortion_Priority == i && isActive_distortion) applyDistortion();
-        //                    if (reverb_Priority == i && isActive_reverb) applyReverb();
-        //                    if (delay_Priority == i && isActive_delay) applyDelay();
-        //                    if (phaser_Priority == i && isActive_phaser) applyPhaser();
-        //                    if (chorus_Priority == i && isActive_chorus) applyChorus();
-        //                    break;
-        //                case 5:
-        //                    if (distortion_Priority == i && isActive_distortion) applyDistortion();
-        //                    if (reverb_Priority == i && isActive_reverb) applyReverb();
-        //                    if (delay_Priority == i && isActive_delay) applyDelay();
-        //                    if (phaser_Priority == i && isActive_phaser) applyPhaser();
-        //                    if (chorus_Priority == i && isActive_chorus) applyChorus();
-        //                    break;
-        //            }
-        //        }
-        //    }
-        //    if (ImGui::Button("Play Audio"))
-        //        counter++;//playing audio function
-        //    ImGui::End();
-        //}
-        //
-        //// Show distortion effect window.
-        //if (isActive_distortion) {
-        //    ImGui::Begin("Distortion", &isActive_distortion);
-        //    ImGui::Text("Adjust distortion parameters");
-        //    ImGui::SliderInt("Effect Priority", &distortion_Priority, 1, 5);
-        //    ImGui::End();
-        //}
-        //// Show reverb effect window.
-        //if (isActive_reverb) {
-        //    ImGui::Begin("Reverb", &isActive_reverb);
-        //    ImGui::Text("Adjust reverb parameters");
-        //    ImGui::SliderInt("Effect Priority", &reverb_Priority, 1, 5);
-        //    ImGui::End();
-        //}
-        //// Show delay effect window.
-        //if (isActive_delay) {
-        //    ImGui::Begin("Delay", &isActive_delay);
-        //    ImGui::Text("Adjust delay parameters");
-        //    ImGui::SliderInt("Effect Priority", &delay_Priority, 1, 5);
-        //    ImGui::End();
-        //}
-        //// Show phaser effect window.
-        //if (isActive_phaser) {
-        //    ImGui::Begin("Phaser", &isActive_phaser);
-        //    ImGui::Text("Adjust phaser parameters");
-        //    ImGui::SliderInt("Effect Priority", &phaser_Priority, 1, 5);
-        //    ImGui::End();
-        //}
-        //// Show chorus effect window.
-        //if (isActive_chorus) {
-        //    ImGui::Begin("Chorus", &isActive_chorus);
-        //    ImGui::Text("Adjust chorus parameters");
-        //    ImGui::SliderInt("Effect Priority", &chorus_Priority, 1, 5);
-        //    ImGui::End();
-        //}
     }
 
 }
