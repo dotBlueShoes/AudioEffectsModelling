@@ -194,15 +194,19 @@ namespace OpenAL {
         alGetSourcei(source, AL_SOURCE_STATE, &sourceState);
         OpenAL::CheckError("14");
 
-        while (sourceState == AL_PLAYING) {
-            // Loop until we're done playing the sound.
-            // https://learn.microsoft.com/en-us/dotnet/api/opentk.audio.openal.algetsourcei?view=xamarin-ios-sdk-12
-            // I believe that audio could be changed while its playing using these. If not the audio could always be 
-            //  stopped at and played from a specific sample.
-            alGetSourcei(source, AL_SOURCE_STATE, &sourceState);
-            OpenAL::CheckError("15");
-        }
+        //while (sourceState == AL_PLAYING) {
+        //    // Loop until we're done playing the sound.
+        //    // https://learn.microsoft.com/en-us/dotnet/api/opentk.audio.openal.algetsourcei?view=xamarin-ios-sdk-12
+        //    // I believe that audio could be changed while its playing using these. If not the audio could always be 
+        //    //  stopped at and played from a specific sample.
+        //    alGetSourcei(source, AL_SOURCE_STATE, &sourceState);
+        //    OpenAL::CheckError("15");
+        //}
     }
+
+    //auto StopSound(const ALuint& source) {
+    //    alSourceStop(source);
+    //}
 
 
     auto DestroySource(ALuint& source) {

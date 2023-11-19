@@ -1,4 +1,4 @@
-#include "../include/DistortionAudioEffect.h"
+#include "DistortionAudioEffect.h"
 
 void DistortionAudioEffect::DisplayEffectWindow()
 {

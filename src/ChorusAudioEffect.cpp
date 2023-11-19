@@ -1,4 +1,4 @@
-#include "../include/ChorusAudioEffect.h"
+#include "ChorusAudioEffect.h"
 
 void ChorusAudioEffect::DisplayEffectWindow()
 {

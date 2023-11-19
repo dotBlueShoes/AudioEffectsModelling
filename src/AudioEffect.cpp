@@ -1,4 +1,4 @@
-#include "../include/AudioEffect.h"
+#include "AudioEffect.h"
 
 void AudioEffect::DisplayEffectWindow()
 {

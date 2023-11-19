@@ -1,4 +1,4 @@
-#include "../include/PhaserAudioEffect.h"
+#include "PhaserAudioEffect.h"
 
 void PhaserAudioEffect::DisplayEffectWindow()
 {

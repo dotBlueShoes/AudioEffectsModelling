@@ -13,7 +13,7 @@ protected:
 public:
     virtual void applyEffect() = 0;  // Pure virtual function for applying the effect
     virtual ~AudioEffect() {}  // Ensure a virtual destructor for proper cleanup
-    virtual void DisplayEffectWindow();
+    virtual void DisplayEffectWindow() = 0;
     void setWindowNumber(int x) {
         windowNumber = x;
     }

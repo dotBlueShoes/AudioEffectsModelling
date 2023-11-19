@@ -1,4 +1,4 @@
-#include "../include/ReverbAudioEffect.h"
+#include "ReverbAudioEffect.h"
 
 void ReverbAudioEffect::DisplayEffectWindow()
 {

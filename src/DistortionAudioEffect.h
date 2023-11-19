@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../include/AudioEffect.h"=
+#include "AudioEffect.h"
 
 class DistortionAudioEffect : public AudioEffect
 {

@@ -1,4 +1,4 @@
-#include "../include/DelayAudioEffect.h"
+#include "DelayAudioEffect.h"
 
 void DelayAudioEffect::DisplayEffectWindow()
 {
