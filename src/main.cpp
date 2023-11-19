@@ -57,7 +57,9 @@ int main(int argumentsCount, char** arguments) {
 
 
     // Prepere space for source buffers.
-    array<ALuint, SOUNDS::SOUND_FILES.size()> monoSourceBuffers { NULL };
+    array<ALuint, 2> monoSourceBuffers { NULL };
+    auto&& mainSourceBuffer = monoSourceBuffers[0];
+    auto&& changeSourceBuffer = monoSourceBuffers[1];
     
 
     // Read .wav file.
@@ -67,21 +69,29 @@ int main(int argumentsCount, char** arguments) {
 
         // Load data into sound buffers.
         monoSoundBuffers[i] = OpenAL::CreateMonoSound(monoData);
-
-        // Load a sound source for mono.
-        monoSourceBuffers[i] = OpenAL::CreateMonoSource(monoSoundBuffers[i], false, pitch, gain);
     }
 
+    const size_t initialSoundIndex = 0;
+    auto&& initialSound = monoSoundBuffers[initialSoundIndex];
 
-    for (auto&& sound : monoSoundBuffers) {
-        alSourcef(sound, AL_MAX_GAIN, OpenAL::MAX_GAIN);
-        OpenAL::CheckError("MaxGain");
-    }
+    // Load a sound source for mono.
+    mainSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, pitch, gain);
+    changeSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, pitch, gain);
+
+    // Set max gain for that sound. // Requires source.
+    alSourcef(initialSound, AL_MAX_GAIN, OpenAL::MAX_GAIN);
+    OpenAL::CheckError("MaxGain");
+
+    //for (auto&& sound : monoSoundBuffers) {
+    //    alSourcef(sound, AL_MAX_GAIN, OpenAL::MAX_GAIN);
+    //    OpenAL::CheckError("MaxGain");
+    //}
     
 
 
     ALint sourceState = NULL;
 
+    spdlog::info("callhere!");
 
     Controls::DrawCallParams drawCallParams {
         backgroundColor,

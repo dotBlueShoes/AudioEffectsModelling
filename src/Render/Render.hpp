@@ -97,12 +97,14 @@ namespace Controls {
         ALuint* sounds;
         ALuint* sources;
         ALint sourceState;
-        size_t sound_index = 0;
+        //size_t sound_index = 0;
         float pitch = 1.0f, gain = 1.0f;
     };
 
     void DrawSampleSelection(DrawCallParams& drawCallParams) {
         const char STRING_SAMPLE_SELECTION[] = "Sample Selection";
+
+        auto&& currentSource = drawCallParams.sources[0];
 
         ImGui::Begin(STRING_SAMPLE_SELECTION);
 
@@ -126,18 +128,19 @@ namespace Controls {
                 ImGui::PushID(i);
 
                 if (ImGui::Button("Select")) {
-                    spdlog::info("OpenGL: PLAYING - StopSound");
-                    alSourceStop(drawCallParams.sources[drawCallParams.sound_index]);
-                    //alSourceRewind(drawCallParams.sources[drawCallParams.sound_index]); ??
 
-                    drawCallParams.sound_index = i;
+                    // Stop currently playing sound on source.
+                    spdlog::info("OpenGL: PLAYING - StopSound");
+                    alSourceStop(drawCallParams.sources[0]);
+
+                    alSourcei(currentSource, AL_BUFFER, drawCallParams.sounds[i]);
+                    OpenAL::CheckError("7");
+
                 }
 
                 ImGui::PopID();
 
             }
-
-            auto&& currentSource = drawCallParams.sources[drawCallParams.sound_index];
 
             if (ImGui::Button("Play")) {
                 alGetSourcei(currentSource, AL_SOURCE_STATE, &drawCallParams.sourceState);
@@ -187,13 +190,13 @@ namespace Controls {
 
             {
                 alGetSourcef(currentSource, AL_GAIN, &temp);
-                if (ImGui::SliderFloat("Gain#IN", &temp, 0, OpenAL::MAX_GAIN)) {
+                if (ImGui::SliderFloat("Gain##IN", &temp, 0, OpenAL::MAX_GAIN)) {
                     alSourcef(currentSource, AL_GAIN, temp);
                     OpenAL::CheckError("Gain");
                 }
 
                 alGetSourcef(currentSource, AL_PITCH, &temp);
-                if (ImGui::SliderFloat("Pitch#IN", &temp, 0, 10)) {
+                if (ImGui::SliderFloat("Pitch##IN", &temp, 0, 10)) {
                     alSourcef(currentSource, AL_PITCH, temp);
                     OpenAL::CheckError("Pitch");
                 }
