@@ -16,6 +16,8 @@
 //  To allow gain above 1.0 the "AL_MAX_GAIN" must be set to the greater value!
 
 
+// There is still that bug with having 4 buffers processed if the programm runs for long enough... dunno why. Maybe its connected to the PCM end somehow?
+
 namespace OpenAL {
 
     const float MAX_GAIN = 10.0f;
@@ -96,10 +98,9 @@ namespace OpenAL {
 
     }
 
-
     auto CreateMonoSound(SoundIO::ReadWavData& monoData) {
-
         ALuint monoSoundBuffer;
+
         alGenBuffers(1, &monoSoundBuffer);
         OpenAL::CheckError("gen-buffers-mono");
 
@@ -116,6 +117,169 @@ namespace OpenAL {
         return monoSoundBuffer;
     }
 
+    namespace Buffered {
+
+        using Buffor4 = array<ALuint, 4>;
+
+        const Buffor4 emptyBuffor { NULL };
+
+        const size_t BUFFER_SIZE (4096);//(2048);//(1024);
+
+        struct BufferQueue {
+            //size_t bufferSize;
+            Buffor4 buffers;
+        };
+
+        //thread* ;
+        bool isThreadStop (false);
+
+        // Buffer queuing loop must operate in a new thread
+        ALint iTotalBuffersProcessed = 0;
+
+        // MONO!
+        auto ThreadQueueBufforLoop(const SoundIO::ReadWavData& monoData, const ALuint& monoSource, const size_t& bufferSize) {
+            while (!isThreadStop) {
+
+                ALint iBuffersProcessed = 0;
+
+                Sleep(10); // Sleep 10 msec periodically.
+                //spdlog::info("thread-call!");
+
+                alGetSourcei(monoSource, AL_BUFFERS_PROCESSED, &iBuffersProcessed);
+                iTotalBuffersProcessed += iBuffersProcessed; 
+
+                spdlog::info(iBuffersProcessed); // AT STOP THERES A BUG! With alSourceStop(monoSource) call has enought time to be called and always sets all buffors as processed. THIS MIGHT BE DANGEROUS.
+
+                // For each processed buffer, remove it from the source queue, read the next chunk of
+                // audio data from the file, fill the buffer with new data, and add it to the source queue
+                while (iBuffersProcessed != 0) {
+
+                    // Remove the buffer from the queue (uiBuffer contains the buffer ID for the dequeued buffer)
+                    ALuint uiBuffer = 0;
+                    alSourceUnqueueBuffers(monoSource, 1, &uiBuffer);
+                    OpenAL::CheckError("unqueue");
+                    // Read more pData audio data (if there is any)
+
+                    //spdlog::info(uiBuffer);
+
+                    // Copy audio data to buffer 
+                    alBufferData(uiBuffer, AL_FORMAT_MONO16, monoData.pcm.data(), bufferSize, monoData.sampleRate);
+                    OpenAL::CheckError("buffer");
+
+                    // Insert the audio buffer to the source queue
+                    alSourceQueueBuffers(monoSource, 1, &uiBuffer);
+                    OpenAL::CheckError("queue");
+
+                    iBuffersProcessed--;
+                }
+            }
+
+            spdlog::info("stopping a sound!");
+
+            isThreadStop = false;
+        }
+
+
+        auto PlaySound(const ALuint& monoSource, const SoundIO::ReadWavData& monoData, const size_t& bufferSize) {
+
+            spdlog::info("play sound call!");
+
+            // This guard ensures that the thread finished its task!
+            //  initially it allows starting this thread.
+            //  when we're playing a sound this function is not callable. Only "StopSound()" is! 
+            if (isThreadStop == false) { 
+
+                alSourcePlay(monoSource);
+                OpenAL::CheckError("play_sound");
+
+                spdlog::info("playing a sound!");
+
+                thread threadQueueBuffor(&ThreadQueueBufforLoop, monoData, monoSource, bufferSize);
+                threadQueueBuffor.detach(); // see
+            }
+        }
+
+        auto StopSound(const ALuint& monoSource, const ALint& state) {
+            switch (state) {
+                case AL_INITIAL:
+                case AL_STOPPED:
+                case AL_PAUSED: {
+                    isThreadStop = false;
+                } break;
+
+                case AL_PLAYING:
+                    isThreadStop = true;
+            }
+
+            alSourceStop(monoSource);
+        }
+
+
+        auto CreateMonoSound(SoundIO::ReadWavData& monoData, BufferQueue& bufferQueue) {
+
+            alGenBuffers(bufferQueue.buffers.size(), bufferQueue.buffers.data());
+            OpenAL::CheckError("gen-buffers-mono");
+
+
+            for (size_t i = 0; i < bufferQueue.buffers.size(); ++i) {
+
+                alBufferData(
+                    bufferQueue.buffers[i],
+                    AL_FORMAT_MONO16,
+                    monoData.pcm.data(),
+                    BUFFER_SIZE,
+                    monoData.sampleRate
+                );
+
+                OpenAL::CheckError("create-buffer-mono");
+            }
+
+            spdlog::info("Created Mono Sound");
+            //OpenAL::CheckError("call");
+
+        }
+
+        auto CreateMonoSource(BufferQueue& bufferQueue, const ALboolean& islooped = false, const ALfloat& pitch = 1.0f, const ALfloat& gain = 1.0f) {
+            ALuint monoSource;
+
+            alGenSources(1, &monoSource);
+            OpenAL::CheckError("1");
+
+
+            alSource3f(monoSource, AL_POSITION, 1.f, 0.f, 0.f);
+            OpenAL::CheckError("2");
+            alSource3f(monoSource, AL_VELOCITY, 0.f, 0.f, 0.f);
+            OpenAL::CheckError("3");
+            alSourcef(monoSource, AL_PITCH, pitch);
+            OpenAL::CheckError("4");
+            alSourcef(monoSource, AL_GAIN, gain);
+            OpenAL::CheckError("5");
+            alSourcei(monoSource, AL_LOOPING, islooped);
+            OpenAL::CheckError("6");
+
+            for (size_t i = 0; i < bufferQueue.buffers.size(); ++i) {
+                alSourceQueueBuffers(monoSource, 1, &bufferQueue.buffers[i]);
+                OpenAL::CheckError("set-queue-mono");
+            }
+
+            // Set max gain for that sound. // Requires source.
+            alSourcef(monoSource, AL_MAX_GAIN, OpenAL::MAX_GAIN);
+            OpenAL::CheckError("set-max_gain");
+
+            return monoSource;
+        }
+
+
+        auto DestorySound(BufferQueue& bufferQueue) {
+
+            for (size_t i = 0; i < bufferQueue.buffers.size(); ++i) {
+                alDeleteBuffers(1, &bufferQueue.buffers[i]);
+            }
+
+            OpenAL::CheckError("delete buffer");
+        }
+
+    }
 
     auto CreateStereoSound(SoundIO::ReadWavData& stereoData) {
 
@@ -137,12 +301,15 @@ namespace OpenAL {
     }
 
 
+
     // Create a sound source that plays our mono sound. ( From the sound buffer. )
     auto CreateMonoSource(const ALuint& mSoundBuffer, const ALboolean& islooped = false, const ALfloat& pitch = 1.0f, const ALfloat& gain = 1.0f) {
         
         ALuint monoSource;
         alGenSources(1, &monoSource);
         OpenAL::CheckError("1");
+
+
 
         alSource3f(monoSource, AL_POSITION, 1.f, 0.f, 0.f);
         OpenAL::CheckError("2");
@@ -211,13 +378,13 @@ namespace OpenAL {
 
     auto DestroySource(ALuint& source) {
         alDeleteSources(1, &source);
-        OpenAL::CheckError("19");
+        OpenAL::CheckError("delete source");
     }
 
 
     auto DestorySound(ALuint& soundBuffer) {
         alDeleteBuffers(1, &soundBuffer);
-        OpenAL::CheckError("21");
+        OpenAL::CheckError("delete buffer");
     }
 
 

@@ -94,7 +94,9 @@ namespace Controls {
         ImVec4 backgroundColor;
         // Sounds
         size_t soundsCount;
-        ALuint* sounds;
+        //ALuint* sounds;
+        OpenAL::Buffered::BufferQueue* queuesBuffers;
+        SoundIO::ReadWavData* wavDatas;
         ALuint* sources;
         ALint sourceState;
         //size_t sound_index = 0;
@@ -129,12 +131,26 @@ namespace Controls {
 
                 if (ImGui::Button("Select")) {
 
+                    alGetSourcei(currentSource, AL_SOURCE_STATE, &drawCallParams.sourceState);
+                    OpenAL::CheckError("select-get-source_state");
+
                     // Stop currently playing sound on source.
                     spdlog::info("OpenGL: PLAYING - StopSound");
-                    alSourceStop(drawCallParams.sources[0]);
+                    OpenAL::Buffered::StopSound(currentSource, drawCallParams.sourceState);
 
-                    alSourcei(currentSource, AL_BUFFER, drawCallParams.sounds[i]);
-                    OpenAL::CheckError("7");
+                    //alSourcei(currentSource, AL_BUFFER, drawCallParams.sounds[i]);
+                    //OpenAL::CheckError("select-buffer-change");
+
+
+                    // 1. DEQUEUE all buffers.
+                    alSourcei(currentSource, AL_BUFFER, 0);
+
+                    // 2. Queue new buffers.
+                    auto&& soundQueueBuffers = drawCallParams.queuesBuffers[i];
+                    for (size_t j = 0; j < soundQueueBuffers.buffers.size(); ++j) {
+                        alSourceQueueBuffers(currentSource, 1, &soundQueueBuffers.buffers[j]);
+                        OpenAL::CheckError("set-queue-mono");
+                    }
 
                 }
 
@@ -142,32 +158,30 @@ namespace Controls {
 
             }
 
-            if (ImGui::Button("Play")) {
-                alGetSourcei(currentSource, AL_SOURCE_STATE, &drawCallParams.sourceState);
-                switch (drawCallParams.sourceState) {
-                    case AL_INITIAL: {
-                        spdlog::info("OpenGL: INITIAL - PlaySound");
-                        OpenAL::PlaySound(currentSource, drawCallParams.sourceState);
-                    } break;
 
-                    case AL_STOPPED: {
-                        spdlog::info("OpenGL: STOPPED - PlaySound");
-                        OpenAL::PlaySound(currentSource, drawCallParams.sourceState);
-                    } break;
+            alGetSourcei(currentSource, AL_SOURCE_STATE, &drawCallParams.sourceState);
+            OpenAL::CheckError("select-get-source_state");
 
-                    case AL_PLAYING: {
-                        spdlog::info("OpenGL: PLAYING - StopSound");
-                        alSourceStop(currentSource);
-                    } break;
 
-                    case AL_PAUSED: {
-                        spdlog::info("OpenGL: PAUSED - PlaySound");
-                        OpenAL::PlaySound(currentSource, drawCallParams.sourceState);
-                    } break;
-
-                    default: {
-                        spdlog::error("OPENGL: NOT A VALID ENUM VALUE");
+            // Play / Stop button.
+            switch (drawCallParams.sourceState) {
+                case AL_INITIAL:
+                case AL_STOPPED:
+                case AL_PAUSED: {
+                    if (ImGui::Button("Play")) {
+                        OpenAL::Buffered::PlaySound(currentSource, drawCallParams.wavDatas[0], OpenAL::Buffered::BUFFER_SIZE);
                     }
+                } break;
+
+                case AL_PLAYING: {
+                    if (ImGui::Button("Stop")) {
+                        spdlog::info("OpenGL: PLAYING - StopSound");
+                        OpenAL::Buffered::StopSound(currentSource, drawCallParams.sourceState);
+                    }
+                } break;
+
+                default: {
+                    spdlog::error("OPENGL: NOT A VALID ENUM VALUE");
                 }
             }
 
@@ -176,8 +190,8 @@ namespace Controls {
             {
                 ALint isLooped = false;
                 alGetSourcei(currentSource, AL_LOOPING, &isLooped);
+                OpenAL::CheckError("select-set-looping");
 
-                OpenAL::CheckError("6");
                 if (ImGui::Checkbox("Looped", (bool*)&isLooped)) {
                     alSourcei(currentSource, AL_LOOPING, isLooped);
                 }

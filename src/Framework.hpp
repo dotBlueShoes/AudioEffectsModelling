@@ -31,3 +31,9 @@
 
 
 #include <charconv>
+
+#include "thread"
+
+using std::thread;
+using std::array;
+using std::vector;

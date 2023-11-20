@@ -15,6 +15,12 @@
 #include "Render/Render.hpp"
 
 
+// Things that might not work:
+// 1. Delay between change from AL_INITIAL to AL_PLAYING - Is it ensured ImGui::Button will be clicked once ?
+// 2. Buffor - 1024 is too small
+
+
+
 int main(int argumentsCount, char** arguments) {
 
     GLFWwindow* window = Render::InitializeWindowRender();
@@ -39,86 +45,48 @@ int main(int argumentsCount, char** arguments) {
 
     const float pitch = 1.0f, gain = 1.0f;
 
-    //{ // Display Sound Buffor data.
-    //    std::cout << "SR: " << monoData.sampleRate << std::endl;
-    //    std::cout << "CH: " << monoData.channels << std::endl;
-    //    std::cout << "BS: " << monoData.pcm.size() << std::endl;
-    //    std::cout << "FC: " << monoData.totalPCMFrameCount << std::endl;
-    //    //spdlog::info("SR: %ui", monoData.sampleRate);
-    //    //spdlog::info("CH: %ui", monoData.channels);
-    //    //spdlog::info("BS: %s", monoData.pcm.size());
-    //    //spdlog::info("FC: %ulli", monoData.totalPCMFrameCount);
-    //    //Display::PrintFromTo(monoData.pcm.data(), 20);
-    //}
 
-
-    // Prepere space for sound buffers.
-    array<ALuint, SOUNDS::SOUND_FILES.size()> monoSoundBuffers { NULL };
-
-
-    // Prepere space for source buffers.
+    // Prepere variables for audio source buffers.
     array<ALuint, 2> monoSourceBuffers { NULL };
     auto&& mainSourceBuffer = monoSourceBuffers[0];
     auto&& changeSourceBuffer = monoSourceBuffers[1];
-    
 
-    // Read .wav file.
+
+    // Prepare variables for sounds data and their buffors.
+    array<SoundIO::ReadWavData, SOUNDS::SOUND_FILES.size()> monoDatas { NULL };
+    array<OpenAL::Buffered::BufferQueue, SOUNDS::SOUND_FILES.size()> soundsBuffors { 
+        //OpenAL::Buffered::BufferQueue { NULL } 
+    };
+
+
+    //  Load wav data. And prep intitial buffors data.
     for (size_t i = 0; i < SOUNDS::SOUND_FILES.size(); ++i) {
-        SoundIO::ReadWavData monoData;
-        SoundIO::ReadMono(SOUNDS::SOUND_FILES[i], monoData);
-
-        // Load data into sound buffers.
-        monoSoundBuffers[i] = OpenAL::CreateMonoSound(monoData);
+        SoundIO::ReadMono(SOUNDS::SOUND_FILES[i], monoDatas[i]);
+        OpenAL::Buffered::CreateMonoSound(monoDatas[i], soundsBuffors[i]);
     }
 
+
     const size_t initialSoundIndex = 0;
-    auto&& initialSound = monoSoundBuffers[initialSoundIndex];
+    auto&& initialSound = soundsBuffors[initialSoundIndex];
 
-    // Load a sound source for mono.
-    mainSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, pitch, gain);
-    changeSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, pitch, gain);
 
-    // Set max gain for that sound. // Requires source.
-    alSourcef(initialSound, AL_MAX_GAIN, OpenAL::MAX_GAIN);
-    OpenAL::CheckError("MaxGain");
-
-    //for (auto&& sound : monoSoundBuffers) {
-    //    alSourcef(sound, AL_MAX_GAIN, OpenAL::MAX_GAIN);
-    //    OpenAL::CheckError("MaxGain");
-    //}
-    
-
+    mainSourceBuffer = OpenAL::Buffered::CreateMonoSource(initialSound, false, pitch, gain);
+    //changeSourceBuffer = OpenAL::Buffered::CreateMonoSource(initialSound, false, pitch, gain);
 
     ALint sourceState = NULL;
 
-    spdlog::info("callhere!");
 
     Controls::DrawCallParams drawCallParams {
         backgroundColor,
         SOUNDS::SOUND_FILES.size(),
-        monoSoundBuffers.data(),
+        //monoSoundBuffers.data(),
+        soundsBuffors.data(),
+        monoDatas.data(),
         monoSourceBuffers.data(),
         sourceState,
         pitch,
         gain
     };
-
-
-    //// Play mono sound.
-    //OpenAL::PlaySound(monoSourceBuffers[0], sourceState);
-    //
-    //
-    //// Change values mid
-    //alSourcef(monoSoundBuffers[0], AL_MAX_GAIN, 2.0f);
-    //OpenAL::CheckError("1");
-    //alSourcef(monoSoundBuffers[0], AL_GAIN, 2.0f);
-    //OpenAL::CheckError("2");
-    //alSourcef(monoSoundBuffers[0], AL_PITCH, 1.2f);
-    //OpenAL::CheckError("3");
-    //
-    //
-    //// Play it again with changed values.
-    //OpenAL::PlaySound(monoSourceBuffers[0], sourceState);
 
 
     // Main loop
@@ -153,12 +121,15 @@ int main(int argumentsCount, char** arguments) {
 
     // Cleanup
 
-    for (auto&& soundSource : monoSourceBuffers) {
-        OpenAL::DestroySource(soundSource);
-    }
+    //for (auto&& soundSource : monoSourceBuffers) {
+    //    OpenAL::DestroySource(soundSource);
+    //}
 
-    for (auto&& soundBuffor : monoSoundBuffers) {
-        OpenAL::DestorySound(soundBuffor);
+    OpenAL::DestroySource(monoSourceBuffers[0]);
+
+    
+    for (auto&& soundBuffor : soundsBuffors) {
+        OpenAL::Buffered::DestorySound(soundBuffor);
     }
 
     OpenAL::DestoryContext(context);
