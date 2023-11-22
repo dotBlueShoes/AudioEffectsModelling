@@ -99,9 +99,10 @@ namespace Controls {
         SoundIO::ReadWavData* wavDatas;
         ALuint* sources;
         ALint sourceState;
-        //size_t sound_index = 0;
         float pitch = 1.0f, gain = 1.0f;
     };
+
+    size_t soundIndex = 0;
 
     void DrawSampleSelection(DrawCallParams& drawCallParams) {
         const char STRING_SAMPLE_SELECTION[] = "Sample Selection";
@@ -138,10 +139,6 @@ namespace Controls {
                     spdlog::info("OpenGL: PLAYING - StopSound");
                     OpenAL::Buffered::StopSound(currentSource, drawCallParams.sourceState);
 
-                    //alSourcei(currentSource, AL_BUFFER, drawCallParams.sounds[i]);
-                    //OpenAL::CheckError("select-buffer-change");
-
-
                     // 1. DEQUEUE all buffers.
                     alSourcei(currentSource, AL_BUFFER, 0);
 
@@ -151,6 +148,9 @@ namespace Controls {
                         alSourceQueueBuffers(currentSource, 1, &soundQueueBuffers.buffers[j]);
                         OpenAL::CheckError("set-queue-mono");
                     }
+
+                    // 3. Change the soundIndex to point at newly selected sound.
+                    soundIndex = i;
 
                 }
 
@@ -169,7 +169,7 @@ namespace Controls {
                 case AL_STOPPED:
                 case AL_PAUSED: {
                     if (ImGui::Button("Play")) {
-                        OpenAL::Buffered::PlaySound(currentSource, drawCallParams.wavDatas[0], OpenAL::Buffered::BUFFER_SIZE);
+                        OpenAL::Buffered::PlaySound(currentSource, drawCallParams.wavDatas[soundIndex], OpenAL::Buffered::BUFFER_SIZE, drawCallParams.queuesBuffers[soundIndex].buffersTotal);
                     }
                 } break;
 

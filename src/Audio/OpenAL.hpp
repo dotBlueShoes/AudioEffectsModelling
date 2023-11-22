@@ -119,40 +119,57 @@ namespace OpenAL {
 
     namespace Buffered {
 
-        using Buffor4 = array<ALuint, 4>;
+        // Number of buffers we fill during sound creation.
+        const size_t initialBuffersCount = 4;
+
+        using Buffor4 = array<ALuint, initialBuffersCount>;
 
         const Buffor4 emptyBuffor { NULL };
 
         const size_t BUFFER_SIZE (4096);//(2048);//(1024);
+        const size_t BUFFER_SIZE_HALF (BUFFER_SIZE / 2);
 
         struct BufferQueue {
-            //size_t bufferSize;
+            ALuint buffersTotal;
             Buffor4 buffers;
         };
 
         //thread* ;
         bool isThreadStop (false);
 
-        // Buffer queuing loop must operate in a new thread
-        ALint iTotalBuffersProcessed = 0;
+        // Keep the buffer count so we don't go beyond it.
+        ALuint buffersProcessedTotal = initialBuffersCount;
 
         // MONO!
-        auto ThreadQueueBufforLoop(const SoundIO::ReadWavData& monoData, const ALuint& monoSource, const size_t& bufferSize) {
+        // Buffer queuing loop must operate in a new thread
+        auto ThreadQueueBufforLoop(const SoundIO::ReadWavData monoData, const ALuint monoSource, const size_t bufferSize, const size_t buffersTotal) {
             while (!isThreadStop) {
 
-                ALint iBuffersProcessed = 0;
+                ALuint buffersProcessed = 0;
 
-                Sleep(10); // Sleep 10 msec periodically.
-                //spdlog::info("thread-call!");
+                alGetSourcei(monoSource, AL_BUFFERS_PROCESSED, (ALint*)&buffersProcessed);
+                
 
-                alGetSourcei(monoSource, AL_BUFFERS_PROCESSED, &iBuffersProcessed);
-                iTotalBuffersProcessed += iBuffersProcessed; 
+                //spdlog::info(buffersProcessed);
 
-                spdlog::info(iBuffersProcessed); // AT STOP THERES A BUG! With alSourceStop(monoSource) call has enought time to be called and always sets all buffors as processed. THIS MIGHT BE DANGEROUS.
+                // THIS IS VERY ILL FORMED!
+                // SOUNDS start to overlap ! Is thread for sure running only once per sound ?
+
+                
+                // Nie alokowaæ wiêcej ni¿ buffersTotal bufferów!
+                ALuint currentlyUsedBuffers = buffersProcessedTotal + buffersProcessed;
+                if ((buffersTotal * 2) - currentlyUsedBuffers > buffersProcessed) {  // (24 - 17 = 7) >= 2
+                    // do the normal
+                } else {
+                    buffersProcessedTotal = initialBuffersCount; // Reset processed buffers count.
+                    isThreadStop = true; // Trigger exit from 
+                    continue;
+                }
+
 
                 // For each processed buffer, remove it from the source queue, read the next chunk of
                 // audio data from the file, fill the buffer with new data, and add it to the source queue
-                while (iBuffersProcessed != 0) {
+                for (ALuint i = buffersProcessedTotal; i < buffersProcessedTotal + buffersProcessed; ++i) {
 
                     // Remove the buffer from the queue (uiBuffer contains the buffer ID for the dequeued buffer)
                     ALuint uiBuffer = 0;
@@ -161,26 +178,31 @@ namespace OpenAL {
                     // Read more pData audio data (if there is any)
 
                     //spdlog::info(uiBuffer);
+                    spdlog::info(i);
+
+                    ALvoid* dataPtr = (ALvoid*)(monoData.pcm.data() + (i * BUFFER_SIZE_HALF));
 
                     // Copy audio data to buffer 
-                    alBufferData(uiBuffer, AL_FORMAT_MONO16, monoData.pcm.data(), bufferSize, monoData.sampleRate);
+                    alBufferData(uiBuffer, AL_FORMAT_MONO16, dataPtr, bufferSize, monoData.sampleRate);
                     OpenAL::CheckError("buffer");
 
                     // Insert the audio buffer to the source queue
                     alSourceQueueBuffers(monoSource, 1, &uiBuffer);
                     OpenAL::CheckError("queue");
-
-                    iBuffersProcessed--;
                 }
+
+
+                buffersProcessedTotal += buffersProcessed;
+
+                Sleep(10); // Sleep 10 msec periodically.
             }
 
-            spdlog::info("stopping a sound!");
-
-            isThreadStop = false;
+            buffersProcessedTotal = initialBuffersCount; // Reset processed buffers count.
+            isThreadStop = false; // Reset TRIGGER.
         }
 
 
-        auto PlaySound(const ALuint& monoSource, const SoundIO::ReadWavData& monoData, const size_t& bufferSize) {
+        auto PlaySound(const ALuint& monoSource, const SoundIO::ReadWavData& monoData, const size_t& bufferSize, const size_t& buffersTotal) {
 
             spdlog::info("play sound call!");
 
@@ -194,7 +216,7 @@ namespace OpenAL {
 
                 spdlog::info("playing a sound!");
 
-                thread threadQueueBuffor(&ThreadQueueBufforLoop, monoData, monoSource, bufferSize);
+                thread threadQueueBuffor(&ThreadQueueBufforLoop, monoData, monoSource, bufferSize, buffersTotal);
                 threadQueueBuffor.detach(); // see
             }
         }
@@ -215,18 +237,20 @@ namespace OpenAL {
         }
 
 
+        // 2 bytes per sample so 1024 buffer holds 512 samples!
+
         auto CreateMonoSound(SoundIO::ReadWavData& monoData, BufferQueue& bufferQueue) {
 
             alGenBuffers(bufferQueue.buffers.size(), bufferQueue.buffers.data());
             OpenAL::CheckError("gen-buffers-mono");
 
-
+            
             for (size_t i = 0; i < bufferQueue.buffers.size(); ++i) {
 
                 alBufferData(
                     bufferQueue.buffers[i],
                     AL_FORMAT_MONO16,
-                    monoData.pcm.data(),
+                    monoData.pcm.data() + (i * BUFFER_SIZE_HALF),
                     BUFFER_SIZE,
                     monoData.sampleRate
                 );

@@ -54,14 +54,21 @@ int main(int argumentsCount, char** arguments) {
 
     // Prepare variables for sounds data and their buffors.
     array<SoundIO::ReadWavData, SOUNDS::SOUND_FILES.size()> monoDatas { NULL };
-    array<OpenAL::Buffered::BufferQueue, SOUNDS::SOUND_FILES.size()> soundsBuffors { 
-        //OpenAL::Buffered::BufferQueue { NULL } 
-    };
+    array<OpenAL::Buffered::BufferQueue, SOUNDS::SOUND_FILES.size()> soundsBuffors { NULL };
 
 
     //  Load wav data. And prep intitial buffors data.
     for (size_t i = 0; i < SOUNDS::SOUND_FILES.size(); ++i) {
         SoundIO::ReadMono(SOUNDS::SOUND_FILES[i], monoDatas[i]);
+
+        spdlog::info("Sound PCM size: {}", monoDatas[i].pcm.size());
+
+        // Set Total Buffers Count.
+        soundsBuffors[i].buffersTotal = monoDatas[i].pcm.size() / OpenAL::Buffered::BUFFER_SIZE;
+        soundsBuffors[i].buffersTotal += (monoDatas[i].pcm.size() % OpenAL::Buffered::BUFFER_SIZE) > 0;
+
+        spdlog::info("Sound buffersTotal: {}", soundsBuffors[i].buffersTotal);
+
         OpenAL::Buffered::CreateMonoSound(monoDatas[i], soundsBuffors[i]);
     }
 
@@ -71,7 +78,7 @@ int main(int argumentsCount, char** arguments) {
 
 
     mainSourceBuffer = OpenAL::Buffered::CreateMonoSource(initialSound, false, pitch, gain);
-    //changeSourceBuffer = OpenAL::Buffered::CreateMonoSource(initialSound, false, pitch, gain);
+    //changeSourceBuffer = OpenAL::Buffered::CreateMonoSource(initialSound, false, pitch, gain); // Error. buffers were reserved for other source and we couldnt change them.
 
     ALint sourceState = NULL;
 
