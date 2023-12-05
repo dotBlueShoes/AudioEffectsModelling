@@ -1,6 +1,7 @@
 #pragma once
 #include "Framework.hpp"
 #include "SoundIO.hpp"
+#include "AudioEffect.h"
 
 #include <al.h>
 #include <alc.h>
@@ -141,9 +142,45 @@ namespace OpenAL {
         // Keep the buffer count so we don't go beyond it.
         ALuint buffersProcessedTotal = initialBuffersCount;
 
+        vector<std::unique_ptr<AudioEffect>> effectsQueue;
+        int16_t wetSoundChunk[BUFFER_SIZE_HALF] { 0 };
+
+        auto QueueBufforProcedure(const ALuint& monoSource, const SoundIO::ReadWavData& monoDrySound, const size_t& bufferSize, const size_t& bufforIndex) {
+            
+            // Remove buffer from the queue (uiBuffer contains the buffer ID for the dequeued buffer)
+            ALuint uiBuffer = 0;
+            alSourceUnqueueBuffers(monoSource, 1, &uiBuffer);
+            OpenAL::CheckError("unqueue");
+
+
+            spdlog::info(bufforIndex);
+
+
+            // Copy audio data to buffer 
+            const int16_t* drySoundChunk = monoDrySound.pcm.data() + (bufforIndex * BUFFER_SIZE_HALF);
+
+            //// RESET WetSoundChunk
+            //for (size_t i = 0; i < BUFFER_SIZE_HALF; ++i) {
+            //    wetSoundChunk[i] = 0;
+            //}
+
+            for (auto&& effect : effectsQueue) {
+                //effect->applyEffect(monoDrySound, bufforIndex, wetSoundChunk);
+                effect->applyEffect();
+            }
+
+            alBufferData(uiBuffer, AL_FORMAT_MONO16, drySoundChunk, bufferSize, monoDrySound.sampleRate);
+            OpenAL::CheckError("buffer");
+
+
+            // Insert the audio buffer to the source queue
+            alSourceQueueBuffers(monoSource, 1, &uiBuffer);
+            OpenAL::CheckError("queue");
+        }
+
         // MONO!
         // Buffer queuing loop must operate in a new thread
-        auto ThreadQueueBufforLoop(const SoundIO::ReadWavData monoData, const ALuint monoSource, const size_t bufferSize, const size_t buffersTotal) {
+        auto ThreadQueueBufforLoop(const SoundIO::ReadWavData monoDrySound, const ALuint monoSource, const size_t bufferSize, const size_t buffersTotal) {
             while (!isThreadStop) {
 
                 ALuint buffersProcessed = 0;
@@ -158,49 +195,32 @@ namespace OpenAL {
                     // For each processed buffer, remove it from the source queue, read the next chunk of
                     // audio data from the file, fill the buffer with new data, and add it to the source queue
                     for (ALuint i = buffersProcessedTotal; i < buffersProcessedTotal + buffersProcessed; ++i) {
-
-                        // Remove the buffer from the queue (uiBuffer contains the buffer ID for the dequeued buffer)
-                        ALuint uiBuffer = 0;
-                        alSourceUnqueueBuffers(monoSource, 1, &uiBuffer);
-                        OpenAL::CheckError("unqueue");
-
-                        spdlog::info(i);
-
-                        ALvoid* dataPtr = (ALvoid*)(monoData.pcm.data() + (i * BUFFER_SIZE_HALF));
-
-                        // Copy audio data to buffer 
-                        alBufferData(uiBuffer, AL_FORMAT_MONO16, dataPtr, bufferSize, monoData.sampleRate);
-                        OpenAL::CheckError("buffer");
-
-                        // Insert the audio buffer to the source queue
-                        alSourceQueueBuffers(monoSource, 1, &uiBuffer);
-                        OpenAL::CheckError("queue");
+                        QueueBufforProcedure(monoSource, monoDrySound, bufferSize, i);
                     }
 
                     buffersProcessedTotal += buffersProcessed;
 
                     Sleep(10); // Sleep 10 msec periodically.
 
+                    // If buffersTotalMono changes with applied delay effects making a shorter sound we than need to check
+                    //  if we are still away from the very end of the track. Else iterate/stop.
+                    if (buffersTotalMono <= buffersProcessedTotal) {
+
+                        if (isLooped) {
+                            buffersProcessedTotal = 0;
+                            continue;
+                        }
+
+                        spdlog::info("Sound stopped playing shorter delay buffers! {}, {}", buffersTotalMono, buffersProcessedTotal);
+                        isThreadStop = true; // Trigger exit from thread!
+                        // EXITS
+
+                    }
+
                 } else { // Run last ones
                     
                     for (ALuint i = buffersProcessedTotal; i < buffersTotalMono; ++i) {
-
-                        // Remove the buffer from the queue (uiBuffer contains the buffer ID for the dequeued buffer)
-                        ALuint uiBuffer = 0;
-                        alSourceUnqueueBuffers(monoSource, 1, &uiBuffer);
-                        OpenAL::CheckError("unqueue");
-
-                        spdlog::info(i);
-
-                        ALvoid* dataPtr = (ALvoid*)(monoData.pcm.data() + (i * BUFFER_SIZE_HALF));
-
-                        // Copy audio data to buffer 
-                        alBufferData(uiBuffer, AL_FORMAT_MONO16, dataPtr, bufferSize, monoData.sampleRate);
-                        OpenAL::CheckError("buffer");
-
-                        // Insert the audio buffer to the source queue
-                        alSourceQueueBuffers(monoSource, 1, &uiBuffer);
-                        OpenAL::CheckError("queue");
+                        QueueBufforProcedure(monoSource, monoDrySound, bufferSize, i);
                     }
 
                     if (isLooped) {
@@ -208,9 +228,9 @@ namespace OpenAL {
                         continue;
                     }
 
-                    spdlog::info("Sound stopped playing naturally! {}, {}", buffersProcessedTotal, buffersTotalMono);
+                    spdlog::info("Sound stopped playing naturally! {}, {}", buffersTotalMono, buffersProcessedTotal);
                     isThreadStop = true; // Trigger exit from thread!
-                    continue;
+                    // EXITS
                 }
 
             }
@@ -222,7 +242,7 @@ namespace OpenAL {
 
         auto PlaySound(
             const ALuint& monoSource, 
-            const SoundIO::ReadWavData& monoData, 
+            const SoundIO::ReadWavData& monoWetData, 
             BufferQueue& soundQueueBuffers,
             const size_t& bufferSize, 
             const size_t& bufferSizeHalf, 
@@ -243,10 +263,10 @@ namespace OpenAL {
             // 2. Queue new initial buffers.
             for (size_t j = 0; j < soundQueueBuffers.buffers.size(); ++j) {
 
-                ALvoid* dataPtr = (ALvoid*)(monoData.pcm.data() + (j * bufferSizeHalf));
+                ALvoid* dataPtr = (ALvoid*)(monoWetData.pcm.data() + (j * bufferSizeHalf));
 
                 // Copy audio data to buffer 
-                alBufferData(soundQueueBuffers.buffers[j], AL_FORMAT_MONO16, dataPtr, bufferSize, monoData.sampleRate);
+                alBufferData(soundQueueBuffers.buffers[j], AL_FORMAT_MONO16, dataPtr, bufferSize, monoWetData.sampleRate);
                 OpenAL::CheckError("create-buffer-mono");
 
                 alSourceQueueBuffers(monoSource, 1, &soundQueueBuffers.buffers[j]);
@@ -257,10 +277,10 @@ namespace OpenAL {
             alSourcePlay(monoSource);
             OpenAL::CheckError("play_sound");
 
-            spdlog::info("playing a sound!");
+            spdlog::info("Playing a sound!");
 
             isThreadStop = false;
-            thread threadQueueBuffor(&ThreadQueueBufforLoop, monoData, monoSource, bufferSize, buffersTotal);
+            thread threadQueueBuffor(&ThreadQueueBufforLoop, monoWetData, monoSource, bufferSize, buffersTotal);
             threadQueueBuffor.detach(); // see
         }
 

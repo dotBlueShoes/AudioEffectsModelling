@@ -9,10 +9,10 @@ void ReverbAudioEffect::DisplayEffectWindow()
 
     ImGui::Begin(windowTitle); 
 
-    ImGui::SliderInt("Delay 1 [-]", &delay1, 0, 4000);
-    ImGui::SliderInt("Delay 2 [-]", &delay2, 0, 4000);
-    ImGui::SliderInt("Delay 3 [-]", &delay3, 0, 4000);
-    ImGui::SliderInt("Delay 4 [-]", &delay4, 0, 4000);
+    ImGui::SliderInt("Delay 1 [ms]", &delay1, 0, 1000);
+    ImGui::SliderInt("Delay 2 [ms]", &delay2, 0, 1000);
+    ImGui::SliderInt("Delay 3 [ms]", &delay3, 0, 1000);
+    ImGui::SliderInt("Delay 4 [ms]", &delay4, 0, 1000);
 
     ImGui::End();
 }

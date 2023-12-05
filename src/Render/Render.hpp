@@ -135,21 +135,14 @@ namespace Controls {
                     alGetSourcei(currentSource, AL_SOURCE_STATE, &drawCallParams.sourceState);
                     OpenAL::CheckError("select-get-source_state");
 
-                    // Stop currently playing sound on source.
-                    spdlog::info("OpenGL: PLAYING - StopSound");
+                    // It's enought to stop it. Because when we click play we 
+                    //  clear the previous buffors and set new ones before actually playing it.
+
+                    // 1. Stop currently playing sound on source.
                     OpenAL::Buffered::StopSound(currentSource, drawCallParams.sourceState);
+                    spdlog::info("Stopping a sound!");
 
-                    // // 1. DEQUEUE all buffers.
-                    // alSourcei(soundIndex, AL_BUFFER, 0);
-                    // 
-                    // // 2. Queue new buffers.
-                    // auto&& soundQueueBuffers = drawCallParams.queuesBuffers[soundIndex];
-                    // for (size_t j = 0; j < soundQueueBuffers.buffers.size(); ++j) {
-                    //     alSourceQueueBuffers(soundIndex, 1, &soundQueueBuffers.buffers[j]);
-                    //     OpenAL::CheckError("set-queue-mono");
-                    // }
-
-                    // 3. Change the soundIndex to point at newly selected sound.
+                    // 2. Change the soundIndex to point at newly selected sound.
                     soundIndex = i;
 
                 }
@@ -249,8 +242,7 @@ namespace Controls {
 
 
 
-    vector<int> effects_queue;
-    std::vector<std::unique_ptr<AudioEffect>> effects_queue_temp;
+    vector<int> effectsQueue;
 
     auto DrawEffectQueue() {
 
@@ -264,10 +256,11 @@ namespace Controls {
         ImGui::Begin(STRING_EFFECT_QUEUE);
 
         if (ImGui::Button("Clear Effects")) {
-            effects_queue.clear();
+            effectsQueue.clear();
+            OpenAL::Buffered::effectsQueue.clear();
         }
 
-        for (size_t i = 0; i < effects_queue.size(); ++i) {
+        for (size_t i = 0; i < effectsQueue.size(); ++i) {
 
             const char* items[] = { "Remove", Effects::STRING_DISTORTION, Effects::STRING_DELAY, Effects::STRING_PHASER, Effects::STRING_CHORUS, Effects::STRING_REVERB };
             //static int item_current_idx = 0; // Here we store our selection data as an index.
@@ -283,7 +276,7 @@ namespace Controls {
 
             if (ImGui::BeginListBox(controlName.data(), listboxSize)) {
                 for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
-                    const bool is_selected = (effects_queue[i] == n);
+                    const bool is_selected = (effectsQueue[i] == n);
 
                     if (ImGui::Selectable(items[n], is_selected)) {
                         switch (n) {
@@ -291,28 +284,28 @@ namespace Controls {
                                 isGoingToBeRemoved = i;
                                 break;
                             case 1:
-                                effects_queue_temp[i] = std::make_unique<DistortionAudioEffect>();
+                                OpenAL::Buffered::effectsQueue[i] = std::make_unique<DistortionAudioEffect>();
                                 break;
                             case 2:
-                                effects_queue_temp[i] = std::make_unique<DelayAudioEffect>();
+                                OpenAL::Buffered::effectsQueue[i] = std::make_unique<DelayAudioEffect>();
                                 break;
                             case 3:
-                                effects_queue_temp[i] = std::make_unique<PhaserAudioEffect>();
+                                OpenAL::Buffered::effectsQueue[i] = std::make_unique<PhaserAudioEffect>();
                                 break;
                             case 4:
-                                effects_queue_temp[i] = std::make_unique<ChorusAudioEffect>();
+                                OpenAL::Buffered::effectsQueue[i] = std::make_unique<ChorusAudioEffect>();
                                 break;
                             case 5:
-                                effects_queue_temp[i] = std::make_unique<ReverbAudioEffect>();
+                                OpenAL::Buffered::effectsQueue[i] = std::make_unique<ReverbAudioEffect>();
                                 break;
                         }
-                        effects_queue_temp[i]->setWindowNumber(i);
+                        OpenAL::Buffered::effectsQueue[i]->setWindowNumber(i);
                         // replace with switch 
                         //  as not only queue is being formed here.
                         // but also additional windows for each effect should be shown/changed with selection.
 
                         if (n != 0) {
-                            effects_queue[i] = n;
+                            effectsQueue[i] = n;
                         }
 
                     }
@@ -326,15 +319,15 @@ namespace Controls {
         }
 
         if (isGoingToBeRemoved >= 0) {
-            effects_queue.erase(effects_queue.begin() + isGoingToBeRemoved);
-            effects_queue_temp.erase(effects_queue_temp.begin() + isGoingToBeRemoved);
+            effectsQueue.erase(effectsQueue.begin() + isGoingToBeRemoved);
+            OpenAL::Buffered::effectsQueue.erase(OpenAL::Buffered::effectsQueue.begin() + isGoingToBeRemoved);
             isGoingToBeRemoved = -1;
         }
 
         if (ImGui::Button("Add Effect")) {
-            effects_queue.push_back(1);
-            effects_queue_temp.push_back(std::make_unique<DistortionAudioEffect>());
-            effects_queue_temp.back()->setWindowNumber(effects_queue_temp.size() - 1);
+            effectsQueue.push_back(1);
+            OpenAL::Buffered::effectsQueue.push_back(std::make_unique<DistortionAudioEffect>());
+            OpenAL::Buffered::effectsQueue.back()->setWindowNumber(OpenAL::Buffered::effectsQueue.size() - 1);
         }
 
         ImGui::End();
@@ -433,7 +426,7 @@ namespace Controls {
 
         DrawSampleSelection(drawCallParams);
         DrawEffectQueue();
-        for (auto& effect : effects_queue_temp) {
+        for (auto& effect : OpenAL::Buffered::effectsQueue) {
             effect->DisplayEffectWindow();
         }
 

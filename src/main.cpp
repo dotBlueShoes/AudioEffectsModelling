@@ -61,6 +61,7 @@ int main(int argumentsCount, char** arguments) {
         SoundIO::ReadMono(SOUNDS::SOUND_FILES[i], monoDatas[i]);
 
         spdlog::info("Sound PCM size: {}", monoDatas[i].pcm.size());
+        spdlog::info("Sound Sample rate: {}", monoDatas[i].sampleRate);
 
         // Set Total Buffers Count.
         soundsBuffors[i].buffersTotal = monoDatas[i].pcm.size() / OpenAL::Buffered::BUFFER_SIZE;

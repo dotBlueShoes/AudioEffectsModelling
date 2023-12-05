@@ -34,7 +34,7 @@ namespace Delay {
 	
 	// Can I apply the effect at buffor change ? or somewhere before ?
 
-	// instead of previousBuffer i should use a vector to get buffers beyound 1024 samples ...
+	// instead of previousBuffer i should use a vector to get buffers beyond 1024 samples ...
 
 	auto ApplyDelay(const ALuint& dryBuffer, const ALuint& previousBuffer, const size_t& bufferSize, const float& feedback, const uint32_t& delay) {
 		ALuint wetBuffer = dryBuffer;
