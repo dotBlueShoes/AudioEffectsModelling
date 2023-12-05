@@ -28,8 +28,7 @@ int main(int argumentsCount, char** arguments) {
 
 
     ALCdevice* device = OpenAL::CreateAudioDevice();
-    std::cout << "OpenAL Device: " << alcGetString(device, ALC_DEVICE_SPECIFIER) << std::endl;
-
+    spdlog::info("OpenAL Device: {}", alcGetString(device, ALC_DEVICE_SPECIFIER));
 
     ALCcontext* context = OpenAL::CreateAudioContext(device);
 

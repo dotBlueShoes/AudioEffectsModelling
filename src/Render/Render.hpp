@@ -139,15 +139,15 @@ namespace Controls {
                     spdlog::info("OpenGL: PLAYING - StopSound");
                     OpenAL::Buffered::StopSound(currentSource, drawCallParams.sourceState);
 
-                    // 1. DEQUEUE all buffers.
-                    alSourcei(currentSource, AL_BUFFER, 0);
-
-                    // 2. Queue new buffers.
-                    auto&& soundQueueBuffers = drawCallParams.queuesBuffers[i];
-                    for (size_t j = 0; j < soundQueueBuffers.buffers.size(); ++j) {
-                        alSourceQueueBuffers(currentSource, 1, &soundQueueBuffers.buffers[j]);
-                        OpenAL::CheckError("set-queue-mono");
-                    }
+                    // // 1. DEQUEUE all buffers.
+                    // alSourcei(soundIndex, AL_BUFFER, 0);
+                    // 
+                    // // 2. Queue new buffers.
+                    // auto&& soundQueueBuffers = drawCallParams.queuesBuffers[soundIndex];
+                    // for (size_t j = 0; j < soundQueueBuffers.buffers.size(); ++j) {
+                    //     alSourceQueueBuffers(soundIndex, 1, &soundQueueBuffers.buffers[j]);
+                    //     OpenAL::CheckError("set-queue-mono");
+                    // }
 
                     // 3. Change the soundIndex to point at newly selected sound.
                     soundIndex = i;
@@ -169,7 +169,15 @@ namespace Controls {
                 case AL_STOPPED:
                 case AL_PAUSED: {
                     if (ImGui::Button("Play")) {
-                        OpenAL::Buffered::PlaySound(currentSource, drawCallParams.wavDatas[soundIndex], OpenAL::Buffered::BUFFER_SIZE, drawCallParams.queuesBuffers[soundIndex].buffersTotal);
+                        auto&& soundQueueBuffers = drawCallParams.queuesBuffers[soundIndex];
+                        auto&& wavData = drawCallParams.wavDatas[soundIndex];
+
+                        OpenAL::Buffered::PlaySound(
+                            currentSource, wavData, soundQueueBuffers,
+                            OpenAL::Buffered::BUFFER_SIZE, OpenAL::Buffered::BUFFER_SIZE_HALF, 
+                            soundQueueBuffers.buffersTotal
+                        );
+
                     }
                 } break;
 
