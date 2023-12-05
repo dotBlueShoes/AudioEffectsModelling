@@ -195,15 +195,33 @@ namespace Controls {
 
             ImGui::SameLine();
 
-            {
-                ALint isLooped = false;
-                alGetSourcei(currentSource, AL_LOOPING, &isLooped);
+            { // CheckBoxes
+
+                ALint isLoopedQueuedBuffors = false;
+                auto&& isLooped = OpenAL::Buffered::isLooped;
+
+                alGetSourcei(currentSource, AL_LOOPING, &isLoopedQueuedBuffors);
                 OpenAL::CheckError("select-set-looping");
 
-                if (ImGui::Checkbox("Looped", (bool*)&isLooped)) {
-                    alSourcei(currentSource, AL_LOOPING, isLooped);
+
+                ImGui::BeginDisabled(isLooped);
+                if (ImGui::Checkbox("LoopedQueuedBuffors", (bool*)&isLoopedQueuedBuffors)) {
+                    alSourcei(currentSource, AL_LOOPING, isLoopedQueuedBuffors);
                 }
+                ImGui::EndDisabled();
+
+
+                ImGui::SameLine();
+
+
+                ImGui::BeginDisabled(isLoopedQueuedBuffors);
+                if (ImGui::Checkbox("Looped", (bool*)&isLooped)) {
+                    spdlog::info("disabled!");
+                }
+                ImGui::EndDisabled();
             }
+
+            
 
 
             static ALfloat temp = 1.0;

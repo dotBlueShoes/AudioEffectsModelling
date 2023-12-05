@@ -134,8 +134,9 @@ namespace OpenAL {
             Buffor4 buffers;
         };
 
-        //thread* ;
         bool isThreadStop (false);
+
+        ALint isLooped = false;
 
         // Keep the buffer count so we don't go beyond it.
         ALuint buffersProcessedTotal = initialBuffersCount;
@@ -146,42 +147,12 @@ namespace OpenAL {
             while (!isThreadStop) {
 
                 ALuint buffersProcessed = 0;
-
                 alGetSourcei(monoSource, AL_BUFFERS_PROCESSED, (ALint*)&buffersProcessed);
                 
 
-                //spdlog::info(buffersProcessed);
-
-                // THIS IS VERY ILL FORMED!
-                // SOUNDS start to overlap ! Is thread for sure running only once per sound ?
-
-                
-                // Nie alokowaæ wiêcej ni¿ buffersTotal bufferów!
-                //ALuint currentlyUsedBuffers = buffersProcessedTotal + buffersProcessed;
-                //if (((buffersTotal * 2) - currentlyUsedBuffers) > buffersProcessed) {  // (24 - 17 = 7) >= 2
-                //    // do the normal
-                //} else {
-                //    spdlog::info("stop call! {}, {}", buffersTotal * 2, buffersProcessed);
-                //    buffersProcessedTotal = initialBuffersCount; // Reset processed buffers count.
-                //    isThreadStop = true; // Trigger exit from 
-                //    continue;
-                //}
-
-                
-
-                
-                //const ALuint currentlyUsedBuffers = buffersProcessedTotal + buffersProcessed;
                 const size_t buffersTotalMono = (buffersTotal - 1) * 2;
 
 
-                // 30 - (24 + 2) = 4
-                // vs
-                // 30 - (29 + 2) = -1
-                //ALint diff = buffersTotalMono - currentlyUsedBuffers;
-
-
-                // 30/30 = sound played fully...
-                // therefore we need to check at 29/30 or more
                 if (buffersProcessedTotal < buffersTotalMono - buffersProcessed) { // Run normal without last ones
                     
                     // For each processed buffer, remove it from the source queue, read the next chunk of
@@ -192,9 +163,7 @@ namespace OpenAL {
                         ALuint uiBuffer = 0;
                         alSourceUnqueueBuffers(monoSource, 1, &uiBuffer);
                         OpenAL::CheckError("unqueue");
-                        // Read more pData audio data (if there is any)
 
-                        //spdlog::info(uiBuffer);
                         spdlog::info(i);
 
                         ALvoid* dataPtr = (ALvoid*)(monoData.pcm.data() + (i * BUFFER_SIZE_HALF));
@@ -207,7 +176,6 @@ namespace OpenAL {
                         alSourceQueueBuffers(monoSource, 1, &uiBuffer);
                         OpenAL::CheckError("queue");
                     }
-
 
                     buffersProcessedTotal += buffersProcessed;
 
@@ -221,9 +189,7 @@ namespace OpenAL {
                         ALuint uiBuffer = 0;
                         alSourceUnqueueBuffers(monoSource, 1, &uiBuffer);
                         OpenAL::CheckError("unqueue");
-                        // Read more pData audio data (if there is any)
 
-                        //spdlog::info(uiBuffer);
                         spdlog::info(i);
 
                         ALvoid* dataPtr = (ALvoid*)(monoData.pcm.data() + (i * BUFFER_SIZE_HALF));
@@ -237,7 +203,12 @@ namespace OpenAL {
                         OpenAL::CheckError("queue");
                     }
 
-                    spdlog::info("stop call! {}, {}", buffersProcessedTotal, buffersTotalMono);
+                    if (isLooped) {
+                        buffersProcessedTotal = 0;
+                        continue;
+                    }
+
+                    spdlog::info("Sound stopped playing naturally! {}, {}", buffersProcessedTotal, buffersTotalMono);
                     isThreadStop = true; // Trigger exit from thread!
                     continue;
                 }
@@ -294,17 +265,6 @@ namespace OpenAL {
         }
 
         auto StopSound(const ALuint& monoSource, const ALint& state) {
-            //switch (state) {
-            //    case AL_INITIAL:
-            //    case AL_STOPPED:
-            //    case AL_PAUSED: {
-            //        isThreadStop = false;
-            //    } break;
-            //
-            //    case AL_PLAYING:
-            //        isThreadStop = true;
-            //}
-
             isThreadStop = true;
             alSourceStop(monoSource);
         }
@@ -312,31 +272,13 @@ namespace OpenAL {
 
         // 2 bytes per sample so 1024 buffer holds 512 samples!
 
-        auto CreateMonoSound(const SoundIO::ReadWavData& monoData, BufferQueue& bufferQueue) {
-
+        auto CreateMonoSoundBuffers(BufferQueue& bufferQueue) {
             alGenBuffers(bufferQueue.buffers.size(), bufferQueue.buffers.data());
             OpenAL::CheckError("gen-buffers-mono");
-
-            
-            //for (size_t i = 0; i < bufferQueue.buffers.size(); ++i) {
-            //
-            //    alBufferData(
-            //        bufferQueue.buffers[i],
-            //        AL_FORMAT_MONO16,
-            //        monoData.pcm.data() + (i * BUFFER_SIZE_HALF),
-            //        BUFFER_SIZE,
-            //        monoData.sampleRate
-            //    );
-            //
-            //    OpenAL::CheckError("create-buffer-mono");
-            //}
-
             spdlog::info("Created Mono Sound");
-            //OpenAL::CheckError("call");
-
         }
 
-        auto CreateMonoSource(BufferQueue& bufferQueue, const ALboolean& islooped = false, const ALfloat& pitch = 1.0f, const ALfloat& gain = 1.0f) {
+        auto CreateMonoSource(const ALboolean& islooped = false, const ALfloat& pitch = 1.0f, const ALfloat& gain = 1.0f) {
             ALuint monoSource;
 
             alGenSources(1, &monoSource);
@@ -356,11 +298,6 @@ namespace OpenAL {
             OpenAL::CheckError("5");
             alSourcei(monoSource, AL_LOOPING, islooped);
             OpenAL::CheckError("6");
-
-            //for (size_t i = 0; i < bufferQueue.buffers.size(); ++i) {
-            //    alSourceQueueBuffers(monoSource, 1, &bufferQueue.buffers[i]);
-            //    OpenAL::CheckError("set-queue-mono");
-            //}
 
             return monoSource;
         }

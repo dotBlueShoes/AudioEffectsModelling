@@ -68,15 +68,16 @@ int main(int argumentsCount, char** arguments) {
 
         spdlog::info("Sound buffersTotal: {}", soundsBuffors[i].buffersTotal);
 
-        OpenAL::Buffered::CreateMonoSound(monoDatas[i], soundsBuffors[i]);
+        OpenAL::Buffered::CreateMonoSoundBuffers(soundsBuffors[i]);
     }
 
 
+    const bool isLoopedOnInitialBuffors = false;
     const size_t initialSoundIndex = 0;
     auto&& initialSound = soundsBuffors[initialSoundIndex];
 
 
-    mainSourceBuffer = OpenAL::Buffered::CreateMonoSource(initialSound, false, pitch, gain);
+    mainSourceBuffer = OpenAL::Buffered::CreateMonoSource(isLoopedOnInitialBuffors, pitch, gain);
     //changeSourceBuffer = OpenAL::Buffered::CreateMonoSource(initialSound, false, pitch, gain); // Error. buffers were reserved for other source and we couldnt change them.
 
     ALint sourceState = NULL;
