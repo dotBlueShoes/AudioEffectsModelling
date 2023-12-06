@@ -14,6 +14,10 @@ public:
 		// Implementation specific to DelayAudioEffect
 	}
 
+	void getProcessedSize(const size_t& drySoundSize, const uint32_t& sampleRate, size_t& wetSoundSize) override {
+
+	}
+
 	ReverbAudioEffect() : AudioEffect() {};
 	void DisplayEffectWindow() override;
 };

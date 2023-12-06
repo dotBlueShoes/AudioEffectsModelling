@@ -185,9 +185,27 @@ namespace OpenAL {
 
                 ALuint buffersProcessed = 0;
                 alGetSourcei(monoSource, AL_BUFFERS_PROCESSED, (ALint*)&buffersProcessed);
+
+
+                
+                // Calculate WetSoundSize from effectQueue so we know with how many buffors we're about to deal with.
+                //
+                size_t wetSoundSize = monoDrySound.pcm.size();
+                size_t temp = 0;
+
+
+                for (auto&& effect : effectsQueue) {
+                    effect->getProcessedSize(wetSoundSize, monoDrySound.sampleRate, temp);
+                    wetSoundSize = temp;
+                }
+
+                uint16_t calcBuffersTotal = wetSoundSize / BUFFER_SIZE;
+                calcBuffersTotal += (wetSoundSize % BUFFER_SIZE) > 0;
+                spdlog::info("CB: {}", calcBuffersTotal);
                 
 
                 const size_t buffersTotalMono = (buffersTotal - 1) * 2;
+                //const size_t buffersTotalMono = (calcBuffersTotal - 1) * 2;
 
 
                 if (buffersProcessedTotal < buffersTotalMono - buffersProcessed) { // Run normal without last ones
@@ -227,6 +245,9 @@ namespace OpenAL {
                         buffersProcessedTotal = 0;
                         continue;
                     }
+
+                    uint64_t temp = Math::MilisecondsToSample(998, 44100);
+                    spdlog::info("Samples: {}", temp);
 
                     spdlog::info("Sound stopped playing naturally! {}, {}", buffersTotalMono, buffersProcessedTotal);
                     isThreadStop = true; // Trigger exit from thread!

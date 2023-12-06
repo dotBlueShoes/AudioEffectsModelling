@@ -19,15 +19,7 @@
 
 namespace Delay {
 
-	// TODO
-	auto SecondsToSample(const float& seconds) {
-		uint32_t sample = 0;
-		return sample;
-	}
-
-	auto NormalizePercent(const float& percent) {
-		return percent / 100;
-	}
+	
 
 	// I don't need the position in the buffer we're curr at! I apply that effect for whole buffor.
 	//  How do i tell that buffor A previous buffor is buffor D? Can i make it at first null == no feedback ?
