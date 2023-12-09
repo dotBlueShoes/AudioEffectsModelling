@@ -14,6 +14,8 @@ using std::vector;
 using std::bitset;
 using std::array;
 
+using size = size_t;
+
 // CONSTANTS
 
 const char OPENAL_FAIL_GET_DEFAULT_DEVICE[] = "Failed to get the default device.";

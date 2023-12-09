@@ -120,30 +120,36 @@ namespace OpenAL {
 
     namespace Buffered {
 
-        // Number of buffers we fill during sound creation.
-        const size_t initialBuffersCount = 4;
 
-        using Buffor4 = array<ALuint, initialBuffersCount>;
+        const size_t INITIAL_BUFFERS_COUNT = 4;                 // Number of buffers we fill during sound creation.
+        const size_t BUFFER_SIZE(4096);                         //(2048); //(1024);
+        const size_t BUFFER_SIZE_HALF(BUFFER_SIZE / 2);
+
+
+        using Buffor4 = array<ALuint, INITIAL_BUFFERS_COUNT>;
+        using EffectsQueue = vector<std::unique_ptr<AudioEffect>>;
+        using EffectsQueueCopy = vector<AudioEffect>;
 
         const Buffor4 emptyBuffor { NULL };
 
-        const size_t BUFFER_SIZE (4096);//(2048);//(1024);
-        const size_t BUFFER_SIZE_HALF (BUFFER_SIZE / 2);
 
         struct BufferQueue {
             ALuint buffersTotal;
             Buffor4 buffers;
         };
 
-        bool isThreadStop (false);
 
+        ALuint buffersProcessedTotal = INITIAL_BUFFERS_COUNT;   // Keep the buffer count so we don't go beyond it.
+        EffectsQueue effectsQueue;
+        bool isThreadStop(false);
         ALint isLooped = false;
 
-        // Keep the buffer count so we don't go beyond it.
-        ALuint buffersProcessedTotal = initialBuffersCount;
 
-        vector<std::unique_ptr<AudioEffect>> effectsQueue;
-        int16_t wetSoundChunk[BUFFER_SIZE_HALF] { 0 };
+        // ! It should be new/delete with sound play / stop
+        // and it's size would be like the orginal times 3 or similar.
+        const size WET_SOUND_RESERVED_SIZE { 48 };
+        int16_t wetSoundReservedBuffor[WET_SOUND_RESERVED_SIZE * BUFFER_SIZE] { 0 };
+
 
         auto QueueBufforProcedure(const ALuint& monoSource, const SoundIO::ReadWavData& monoDrySound, const size_t& bufferSize, const size_t& bufforIndex) {
             
@@ -153,16 +159,15 @@ namespace OpenAL {
             OpenAL::CheckError("unqueue");
 
 
-            spdlog::info(bufforIndex);
+            //spdlog::info(bufforIndex);
 
+
+            // 1. Load the dry sound in.
+            // WRONG!!!!
+            //std::memcpy(wetSoundReservedBuffor, monoDrySound.pcm.data(), monoDrySound.pcm.size());
 
             // Copy audio data to buffer 
             const int16_t* drySoundChunk = monoDrySound.pcm.data() + (bufforIndex * BUFFER_SIZE_HALF);
-
-            //// RESET WetSoundChunk
-            //for (size_t i = 0; i < BUFFER_SIZE_HALF; ++i) {
-            //    wetSoundChunk[i] = 0;
-            //}
 
             for (auto&& effect : effectsQueue) {
                 //effect->applyEffect(monoDrySound, bufforIndex, wetSoundChunk);
@@ -176,6 +181,110 @@ namespace OpenAL {
             // Insert the audio buffer to the source queue
             alSourceQueueBuffers(monoSource, 1, &uiBuffer);
             OpenAL::CheckError("queue");
+        }
+
+
+        namespace Rewrite {
+
+
+            // To ensure that data inside does not change form the moment of calculating total buffers size
+            //  To the moment we're calculating processed sound as the data inside effectsQueue changes via other thread. 
+            //EffectsQueueCopy effectsQueueThreadSafeCopy;
+
+
+            auto BufforQueuingLoop(
+                /*cpy*/ const SoundIO::ReadWavData monoDrySound,    // Original (dry) sound data.
+                /*cpy*/ const ALuint monoSource,                    // Audio source for mono. 
+                /*cpy*/ const size bufferSize                       // Size of each buffer
+            ) {
+                ALint buffersProcessed (0);                         // Initialize storage for information about processed buffers.
+                size wetBuffersTotal (0);                           // Initialize storage for information about wet sound buffers.
+
+                while (!isThreadStop) {                             // Function runs in a loop until triggerted to stop.
+
+                    // Create a copy of effectsQueue.
+                    //effectsQueueThreadSafeCopy = effectsQueue.
+                    //for (auto&& effect : effectsQueue) {
+                    //    effectsQueueThreadSafeCopy[0] = 
+                    //}
+
+                    // Calculate amount of wet sound buffers.
+                    size wetSoundSize = monoDrySound.pcm.size();    // 1. Load the dry sound size in.
+
+                    // 2. Add each effect size change to it.
+                    for (auto&& effect : effectsQueue) {            
+                        effect->getProcessedSize(wetSoundSize, monoDrySound.sampleRate, wetSoundSize);
+                    }
+
+                    // Get information about processed buffers.
+                    alGetSourcei(monoSource, AL_BUFFERS_PROCESSED, &buffersProcessed);
+
+                    // Get information about total wet sound buffers.
+                    wetBuffersTotal = wetSoundSize / BUFFER_SIZE;
+                    wetBuffersTotal += (wetSoundSize % BUFFER_SIZE) > 0;
+
+                    // If total amount of effects takes to much memory to allocate then thor an error!
+                    if (wetBuffersTotal > WET_SOUND_RESERVED_SIZE) {
+                        spdlog::error("Error to much wet buffors. Imposible Allocation! Tot: {}, Proc: {}", wetBuffersTotal, buffersProcessedTotal);
+                        throw;
+                    }
+                    
+                    const size wetBuffersTotalMono = (wetBuffersTotal - 1) * 2;    // It's Mono! Therefore *2.
+
+                    // The amount of total wet buffers changes. So we need to check
+                    //  whether we still would have sound data in the very next buffor or not.
+                    //  If not. We either end this play iteration if looped or finish the thread otherwise.
+                    if (buffersProcessedTotal < wetBuffersTotalMono) {
+
+                        if (buffersProcessedTotal < wetBuffersTotalMono - buffersProcessed) {   // For all except last queuing.
+
+                            for (ALuint i = buffersProcessedTotal; i < buffersProcessedTotal + buffersProcessed; ++i) {
+                                QueueBufforProcedure(monoSource, monoDrySound, bufferSize, i);
+                            }
+
+                            buffersProcessedTotal += buffersProcessed;
+
+                            Sleep(10);                                                      // Sleep 10 msec periodically.
+
+                        } else { // Last queuing
+
+                            for (ALuint i = buffersProcessedTotal; i < wetBuffersTotalMono; ++i) {
+                                QueueBufforProcedure(monoSource, monoDrySound, bufferSize, i);
+                            }
+
+                            if (isLooped) {
+                                buffersProcessedTotal = 0;
+                                continue;
+                            }
+
+                            spdlog::info("Sound stopped playing naturally! {}, {}", wetBuffersTotalMono, buffersProcessedTotal);
+                            isThreadStop = true; // Trigger exit from thread!
+                            // EXITS
+
+                        }
+
+                    } else {
+
+                        if (isLooped) {
+                            buffersProcessedTotal = 0;
+                            continue;
+                        } else {
+
+                            spdlog::info("Sound stopped playing naturally! {}, {}", wetBuffersTotalMono, buffersProcessedTotal);
+                            isThreadStop = true; // Trigger exit from thread!
+                            // EXITS
+
+                        }
+
+                    }
+
+                }
+
+                buffersProcessedTotal = INITIAL_BUFFERS_COUNT; // Reset processed buffers count.
+                isThreadStop = false; // Reset TRIGGER.
+
+            }
+
         }
 
         // MONO!
@@ -246,9 +355,6 @@ namespace OpenAL {
                         continue;
                     }
 
-                    uint64_t temp = Math::MilisecondsToSample(998, 44100);
-                    spdlog::info("Samples: {}", temp);
-
                     spdlog::info("Sound stopped playing naturally! {}, {}", buffersTotalMono, buffersProcessedTotal);
                     isThreadStop = true; // Trigger exit from thread!
                     // EXITS
@@ -256,7 +362,7 @@ namespace OpenAL {
 
             }
 
-            buffersProcessedTotal = initialBuffersCount; // Reset processed buffers count.
+            buffersProcessedTotal = INITIAL_BUFFERS_COUNT; // Reset processed buffers count.
             isThreadStop = false; // Reset TRIGGER.
         }
 
@@ -302,6 +408,7 @@ namespace OpenAL {
 
             isThreadStop = false;
             thread threadQueueBuffor(&ThreadQueueBufforLoop, monoWetData, monoSource, bufferSize, buffersTotal);
+            //thread threadQueueBuffor(&Rewrite::BufforQueuingLoop, monoWetData, monoSource, bufferSize);
             threadQueueBuffor.detach(); // see
         }
 

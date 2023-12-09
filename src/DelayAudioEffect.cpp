@@ -15,3 +15,14 @@ void DelayAudioEffect::DisplayEffectWindow()
 
     ImGui::End();
 }
+
+void DelayAudioEffect::getProcessedSize(const size_t& drySoundSize, const uint32_t& sampleRate, size_t& wetSoundSize) {
+        // Delay changes from per miliseconds to per samples.
+    uint16_t delayInSamples = Math::MilisecondsToSample(delay, sampleRate);
+    //spdlog::info("S: {}", delayInSamples, );
+    wetSoundSize = drySoundSize + delayInSamples;
+}
+
+void DelayAudioEffect::applyEffect() {
+
+}
