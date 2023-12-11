@@ -22,7 +22,8 @@ int main(int argumentsCount, char** arguments) {
 
 
     ALCdevice* device = OpenAL::CreateAudioDevice();
-    std::cout << "OpenAL Device: " << alcGetString(device, ALC_DEVICE_SPECIFIER) << std::endl;
+    //std::cout << "OpenAL Device: " << alcGetString(device, ALC_DEVICE_SPECIFIER) << std::endl;
+    spdlog::info("OpenAL Device: {}", alcGetString(device, ALC_DEVICE_SPECIFIER));
 
 
     ALCcontext* context = OpenAL::CreateAudioContext(device);
@@ -39,6 +40,7 @@ int main(int argumentsCount, char** arguments) {
 
     const float pitch = 1.0f, gain = 1.0f;
 
+
     //{ // Display Sound Buffor data.
     //    std::cout << "SR: " << monoData.sampleRate << std::endl;
     //    std::cout << "CH: " << monoData.channels << std::endl;
@@ -52,73 +54,112 @@ int main(int argumentsCount, char** arguments) {
     //}
 
 
+    // Prepere space for sounds data.
+    array<SoundIO::ReadWavData, SOUNDS::SOUND_FILES.size()> soundsData { NULL };
+
+
     // Prepere space for sound buffers.
-    array<ALuint, SOUNDS::SOUND_FILES.size()> monoSoundBuffers { NULL };
+    array<ALuint, SOUNDS::SOUND_FILES.size()> monoSounds { NULL };
 
 
     // Prepere space for source buffers.
-    array<ALuint, 2> monoSourceBuffers { NULL };
-    auto&& mainSourceBuffer = monoSourceBuffers[0];
-    auto&& changeSourceBuffer = monoSourceBuffers[1];
+    array<ALuint, 2> monoSources { NULL };
+    auto&& mainSourceBuffer = monoSources[0];
+    auto&& changeSourceBuffer = monoSources[1];
     
 
     // Read .wav file.
-    for (size_t i = 0; i < SOUNDS::SOUND_FILES.size(); ++i) {
-        SoundIO::ReadWavData monoData;
-        SoundIO::ReadMono(SOUNDS::SOUND_FILES[i], monoData);
+    for (size i = 0; i < SOUNDS::SOUND_FILES.size(); ++i) {
+        SoundIO::ReadMono(SOUNDS::SOUND_FILES[i], soundsData[i]);
+
 
         // Load data into sound buffers.
-        monoSoundBuffers[i] = OpenAL::CreateMonoSound(monoData);
+        monoSounds[i] = OpenAL::CreateMonoSound(soundsData[i]);
     }
 
-    const size_t initialSoundIndex = 0;
-    auto&& initialSound = monoSoundBuffers[initialSoundIndex];
+    const size initialSoundIndex = 0;
+    auto&& initialSound = monoSounds[initialSoundIndex];
+
 
     // Load a sound source for mono.
     mainSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, pitch, gain);
     changeSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, pitch, gain);
 
-    // Set max gain for that sound. // Requires source.
-    alSourcef(initialSound, AL_MAX_GAIN, OpenAL::MAX_GAIN);
-    OpenAL::CheckError("MaxGain");
-
-    //for (auto&& sound : monoSoundBuffers) {
-    //    alSourcef(sound, AL_MAX_GAIN, OpenAL::MAX_GAIN);
-    //    OpenAL::CheckError("MaxGain");
-    //}
-    
-
-
     ALint sourceState = NULL;
 
-    spdlog::info("callhere!");
 
     Controls::DrawCallParams drawCallParams {
         backgroundColor,
         SOUNDS::SOUND_FILES.size(),
-        monoSoundBuffers.data(),
-        monoSourceBuffers.data(),
+        monoSounds.data(),
+        monoSources.data(),
         sourceState,
         pitch,
         gain
     };
 
 
-    //// Play mono sound.
-    //OpenAL::PlaySound(monoSourceBuffers[0], sourceState);
-    //
-    //
-    //// Change values mid
-    //alSourcef(monoSoundBuffers[0], AL_MAX_GAIN, 2.0f);
-    //OpenAL::CheckError("1");
-    //alSourcef(monoSoundBuffers[0], AL_GAIN, 2.0f);
-    //OpenAL::CheckError("2");
-    //alSourcef(monoSoundBuffers[0], AL_PITCH, 1.2f);
-    //OpenAL::CheckError("3");
-    //
-    //
-    //// Play it again with changed values.
-    //OpenAL::PlaySound(monoSourceBuffers[0], sourceState);
+    ALuint soundFinal;
+
+    { // Prep Delay
+
+        // Get delay time in samples from effect.
+        const uint16_t delayInSamples = 18210;
+        const float feedbackNormalized = 0.1;
+
+        auto&& selectedSound = soundsData[0];
+        auto&& drySoundSize = selectedSound.pcm.size();
+        auto&& drySoundData = selectedSound.pcm.data();
+
+        // Count required space for whole sound.
+
+        size wetSoundSize = drySoundSize + delayInSamples;
+
+
+        vector<int16_t> pcmDelayed; 
+        
+        {
+            pcmDelayed.reserve(wetSoundSize);
+            size i = 0;
+
+            for (; i < drySoundSize; ++i) {
+                pcmDelayed.push_back(drySoundData[i]);
+            }
+
+            for (; i < wetSoundSize; ++i) {
+                pcmDelayed.push_back(0);
+            }
+        }
+        
+
+        // Create a copy of the original sound.
+        SoundIO::ReadWavData soundDelayed { selectedSound.channels, selectedSound.sampleRate, selectedSound.totalPCMFrameCount, pcmDelayed };
+        
+        {   // Calculate new sound.
+            
+            // Calc. feedback
+            for (size i = 0; i < drySoundSize; ++i) {
+                soundDelayed.pcm[i] *= feedbackNormalized;
+            }
+
+            // Add delayed sound
+            for (size i = 0; i < drySoundSize; ++i) {
+                soundDelayed.pcm[delayInSamples + i] += drySoundData[i];
+            }
+        }
+        
+
+
+        // Create buffor and load data into it for newly created sound.
+        soundFinal = OpenAL::CreateMonoSound(soundDelayed);
+
+
+        alSourcei(mainSourceBuffer, AL_BUFFER, soundFinal);
+        OpenAL::CheckError("source-sound-assignment");
+
+
+        OpenAL::PlaySound(mainSourceBuffer, sourceState);
+    }
 
 
     // Main loop
@@ -153,13 +194,15 @@ int main(int argumentsCount, char** arguments) {
 
     // Cleanup
 
-    for (auto&& soundSource : monoSourceBuffers) {
+    for (auto&& soundSource : monoSources) {
         OpenAL::DestroySource(soundSource);
     }
 
-    for (auto&& soundBuffor : monoSoundBuffers) {
+    for (auto&& soundBuffor : monoSounds) {
         OpenAL::DestorySound(soundBuffor);
     }
+
+    OpenAL::DestorySound(soundFinal);
 
     OpenAL::DestoryContext(context);
     OpenAL::DestoryDevice(device);

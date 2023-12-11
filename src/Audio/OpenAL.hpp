@@ -144,10 +144,15 @@ namespace OpenAL {
         alGenSources(1, &monoSource);
         OpenAL::CheckError("1");
 
+        
         alSource3f(monoSource, AL_POSITION, 1.f, 0.f, 0.f);
         OpenAL::CheckError("2");
         alSource3f(monoSource, AL_VELOCITY, 0.f, 0.f, 0.f);
         OpenAL::CheckError("3");
+
+        // Set max gain for that sound. // Requires source.
+        alSourcef(monoSource, AL_MAX_GAIN, MAX_GAIN);
+        OpenAL::CheckError("MaxGain");
         alSourcef(monoSource, AL_PITCH, pitch);
         OpenAL::CheckError("4");
         alSourcef(monoSource, AL_GAIN, gain);
