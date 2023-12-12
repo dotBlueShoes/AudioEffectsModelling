@@ -19,8 +19,8 @@ void DistortionAudioEffect::DisplayEffectWindow()
 
     ImGui::SliderInt("Type [0, 1]", &type, 0, 1);
     ImGui::SliderFloat("Gain [-]", &gain, 0, 10);
-    ImGui::SliderInt("Dry [dB]", &dry, -32, 32);
-    ImGui::SliderInt("Wet [dB]", &wet, -32, 32);
+
+
 
     ImGui::End();
 }

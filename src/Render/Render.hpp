@@ -223,8 +223,9 @@ namespace Controls {
 
         ImGui::Begin(STRING_EFFECT_QUEUE);
 
-        if (ImGui::Button("Clear Effects")) {
+       if (ImGui::Button("Clear Effects")) {
             effects_queue.clear();
+            effects_queue_temp.clear();
         }
 
         for (size_t i = 0; i < effects_queue.size(); ++i) {
