@@ -99,11 +99,21 @@ int main(int argumentsCount, char** arguments) {
     };
 
 
+    // TODO
+    // 1. hit play
+    // 2. time from each effect is being counted to create final time; (effectfunction)
+    // 3. we create space for pcmData
+    // 4. Initialize it with the original sound
+    // 5. We send that to applayEffect for each effect (effectfunction)
+    // 6. We set the source to play that sound
+    // 7. We play that sound
+    // 8. we destory space for pcm data
+
     // Initialize holders.
     SoundIO::ReadWavData soundDelayed;
     ALuint soundFinal;
 
-    { // Prep Delay
+    { // Delay Effect
 
         // Get delay time in samples from effect.
         const uint16_t delayInSamples = 18210;
@@ -117,22 +127,7 @@ int main(int argumentsCount, char** arguments) {
 
         size wetSoundSize = drySoundSize + delayInSamples;
 
-
-        //vector<int16_t> pcmDelayed; 
-        //
-        //{
-        //    pcmDelayed.reserve(wetSoundSize);
-        //    size i = 0;
-        //
-        //    for (; i < drySoundSize; ++i) {
-        //        pcmDelayed.push_back(drySoundData[i]);
-        //    }
-        //
-        //    for (; i < wetSoundSize; ++i) {
-        //        pcmDelayed.push_back(0);
-        //    }
-        //}
-
+        // Reserve space and Fill with initial PCM data.
         int16_t* pcmDelayed = new int16_t[wetSoundSize];
         {
             size i = 0;
@@ -206,28 +201,32 @@ int main(int argumentsCount, char** arguments) {
         glfwSwapBuffers(window);
     }
 
-    // Cleanup
+    
+    { // Cleanup
 
-    for (auto&& soundSource : monoSources) {
-        OpenAL::DestroySource(soundSource);
+        for (auto&& soundSource : monoSources) {
+            OpenAL::DestroySource(soundSource);
+        }
+
+        for (auto&& soundBuffor : monoSounds) {
+            OpenAL::DestorySound(soundBuffor);
+        }
+
+        OpenAL::DestorySound(soundFinal);
+
+        for (auto&& sound : soundsData) {
+            SoundIO::DestorySoundData(sound);
+        }
+
+        SoundIO::DestorySoundData(soundDelayed);
+
+        OpenAL::DestoryContext(context);
+        OpenAL::DestoryDevice(device);
+
+        Render::DestroyWindowRender(window);
+
     }
-
-    for (auto&& soundBuffor : monoSounds) {
-        OpenAL::DestorySound(soundBuffor);
-    }
-
-    OpenAL::DestorySound(soundFinal);
-
-    for (auto&& sound : soundsData) {
-        SoundIO::DestorySoundData(sound);
-    }
-
-    SoundIO::DestorySoundData(soundDelayed);
-
-    OpenAL::DestoryContext(context);
-    OpenAL::DestoryDevice(device);
-
-    Render::DestroyWindowRender(window);
+    
 
     return 0;
 }
