@@ -99,6 +99,8 @@ int main(int argumentsCount, char** arguments) {
     };
 
 
+    // Initialize holders.
+    SoundIO::ReadWavData soundDelayed;
     ALuint soundFinal;
 
     { // Prep Delay
@@ -108,43 +110,55 @@ int main(int argumentsCount, char** arguments) {
         const float feedbackNormalized = 0.1;
 
         auto&& selectedSound = soundsData[0];
-        auto&& drySoundSize = selectedSound.pcm.size();
-        auto&& drySoundData = selectedSound.pcm.data();
+        auto&& drySoundSize = selectedSound.pcmSize;
+        auto&& drySoundData = selectedSound.pcmData;
 
         // Count required space for whole sound.
 
         size wetSoundSize = drySoundSize + delayInSamples;
 
 
-        vector<int16_t> pcmDelayed; 
-        
+        //vector<int16_t> pcmDelayed; 
+        //
+        //{
+        //    pcmDelayed.reserve(wetSoundSize);
+        //    size i = 0;
+        //
+        //    for (; i < drySoundSize; ++i) {
+        //        pcmDelayed.push_back(drySoundData[i]);
+        //    }
+        //
+        //    for (; i < wetSoundSize; ++i) {
+        //        pcmDelayed.push_back(0);
+        //    }
+        //}
+
+        int16_t* pcmDelayed = new int16_t[wetSoundSize];
         {
-            pcmDelayed.reserve(wetSoundSize);
             size i = 0;
-
             for (; i < drySoundSize; ++i) {
-                pcmDelayed.push_back(drySoundData[i]);
+                pcmDelayed[i] = drySoundData[i];
             }
-
+        
             for (; i < wetSoundSize; ++i) {
-                pcmDelayed.push_back(0);
+                pcmDelayed[i] = 0;
             }
         }
         
 
-        // Create a copy of the original sound.
-        SoundIO::ReadWavData soundDelayed { selectedSound.channels, selectedSound.sampleRate, selectedSound.totalPCMFrameCount, pcmDelayed };
+        // Create a copy of the original sound. with new pcm data.
+        soundDelayed = SoundIO::ReadWavData { selectedSound.channels, selectedSound.sampleRate, selectedSound.totalPCMFrameCount, wetSoundSize, pcmDelayed };
         
         {   // Calculate new sound.
             
             // Calc. feedback
             for (size i = 0; i < drySoundSize; ++i) {
-                soundDelayed.pcm[i] *= feedbackNormalized;
+                soundDelayed.pcmData[i] *= feedbackNormalized;
             }
 
             // Add delayed sound
             for (size i = 0; i < drySoundSize; ++i) {
-                soundDelayed.pcm[delayInSamples + i] += drySoundData[i];
+                soundDelayed.pcmData[delayInSamples + i] += drySoundData[i];
             }
         }
         
@@ -203,6 +217,12 @@ int main(int argumentsCount, char** arguments) {
     }
 
     OpenAL::DestorySound(soundFinal);
+
+    for (auto&& sound : soundsData) {
+        SoundIO::DestorySoundData(sound);
+    }
+
+    SoundIO::DestorySoundData(soundDelayed);
 
     OpenAL::DestoryContext(context);
     OpenAL::DestoryDevice(device);

@@ -106,8 +106,8 @@ namespace OpenAL {
         alBufferData(
             monoSoundBuffer,
             monoData.channels > 1 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16, /* 16bit depth */
-            monoData.pcm.data(),
-            (ALsizei) monoData.pcm.size() * 2 /* two bytes per sample */,
+            monoData.pcmData,
+            (ALsizei) monoData.pcmSize * 2 /* two bytes per sample */,
             monoData.sampleRate
         );
 
@@ -126,8 +126,8 @@ namespace OpenAL {
         alBufferData(
             stereoSoundBuffer,
             stereoData.channels > 1 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16, /* 16bit depth */
-            stereoData.pcm.data(),
-            (ALsizei) stereoData.pcm.size() * 2 /* two bytes per sample */,
+            stereoData.pcmData,
+            (ALsizei) stereoData.pcmSize * 2 /* two bytes per sample */,
             stereoData.sampleRate
         );
 

@@ -37,7 +37,11 @@ namespace SoundIO {
         uint32_t channels = 0;
         uint32_t sampleRate = 0;
         drwav_uint64 totalPCMFrameCount = 0;
-        std::vector<int16_t> pcm;
+
+        //std::vector<int16_t> pcm;
+
+        size pcmSize = 0;
+        int16_t* pcmData = nullptr;
 
         drwav_uint64 getTotalSamples() {
             return totalPCMFrameCount * channels;
@@ -67,11 +71,21 @@ namespace SoundIO {
             exit(FAILURE);
         }
 
-        monoData.pcm.resize(size_t(monoData.getTotalSamples()));
-        std::memcpy(monoData.pcm.data(), pSampleData, monoData.pcm.size() * /* two bytes in int16 */ 2);
+        //monoData.pcm.resize(size_t(monoData.getTotalSamples()));
+        //std::memcpy(monoData.pcm.data(), pSampleData, monoData.pcm.size() * /* two bytes in int16 */ 2);
+
+        monoData.pcmSize = (size)monoData.getTotalSamples();
+        monoData.pcmData = new int16_t[monoData.pcmSize];
+        std::memcpy(monoData.pcmData, pSampleData, monoData.pcmSize * /* two bytes in int16 */ 2);
+
         drwav_free(pSampleData, nullptr);
 
 	}
+
+
+    auto DestorySoundData(ReadWavData& sound) {
+        delete[] sound.pcmData;
+    }
 
     // Read a stereo file using dr_wav.h
     auto ReadStereo(const char* const soundFile, ReadWavData& stereoData) {
@@ -92,8 +106,13 @@ namespace SoundIO {
             exit(FAILURE);
         }
 
-        stereoData.pcm.resize(size_t(stereoData.getTotalSamples()));
-        std::memcpy(stereoData.pcm.data(), pSampleData, stereoData.pcm.size() * /* two bytes in s15 */ 2);
+        //stereoData.pcm.resize(size_t(stereoData.getTotalSamples()));
+        //std::memcpy(stereoData.pcm.data(), pSampleData, stereoData.pcm.size() * /* two bytes in s15 */ 2);
+
+        stereoData.pcmSize = (size)stereoData.getTotalSamples();
+        stereoData.pcmData = new int16_t[stereoData.pcmSize];
+        std::memcpy(stereoData.pcmData, pSampleData, stereoData.pcmSize * /* two bytes in int16 */ 2);
+
         drwav_free(pSampleData, nullptr);
         
     }
