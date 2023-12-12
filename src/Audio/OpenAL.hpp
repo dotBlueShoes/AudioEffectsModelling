@@ -20,6 +20,12 @@ namespace OpenAL {
 
     const float MAX_GAIN = 10.0f;
 
+
+    // Final sound holders. // with effects applied.
+    SoundIO::ReadWavData soundDataFinal;
+    ALuint soundFinal;
+
+
     auto CheckError(
         const char* message
     ) {

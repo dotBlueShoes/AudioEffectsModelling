@@ -109,9 +109,7 @@ int main(int argumentsCount, char** arguments) {
     // 7. We play that sound
     // 8. we destory space for pcm data
 
-    // Initialize holders.
-    SoundIO::ReadWavData soundDelayed;
-    ALuint soundFinal;
+    
 
     { // Delay Effect
 
@@ -125,6 +123,7 @@ int main(int argumentsCount, char** arguments) {
 
         // Count required space for whole sound.
 
+        // in 
         size wetSoundSize = drySoundSize + delayInSamples;
 
         // Reserve space and Fill with initial PCM data.
@@ -142,32 +141,35 @@ int main(int argumentsCount, char** arguments) {
         
 
         // Create a copy of the original sound. with new pcm data.
-        soundDelayed = SoundIO::ReadWavData { selectedSound.channels, selectedSound.sampleRate, selectedSound.totalPCMFrameCount, wetSoundSize, pcmDelayed };
+        OpenAL::soundDataFinal = SoundIO::ReadWavData { selectedSound.channels, selectedSound.sampleRate, selectedSound.totalPCMFrameCount, wetSoundSize, pcmDelayed };
         
         {   // Calculate new sound.
             
             // Calc. feedback
             for (size i = 0; i < drySoundSize; ++i) {
-                soundDelayed.pcmData[i] *= feedbackNormalized;
+                OpenAL::soundDataFinal.pcmData[i] *= feedbackNormalized;
             }
 
             // Add delayed sound
             for (size i = 0; i < drySoundSize; ++i) {
-                soundDelayed.pcmData[delayInSamples + i] += drySoundData[i];
+                OpenAL::soundDataFinal.pcmData[delayInSamples + i] += drySoundData[i];
             }
         }
         
 
 
         // Create buffor and load data into it for newly created sound.
-        soundFinal = OpenAL::CreateMonoSound(soundDelayed);
+        OpenAL::soundFinal = OpenAL::CreateMonoSound(OpenAL::soundDataFinal);
 
 
-        alSourcei(mainSourceBuffer, AL_BUFFER, soundFinal);
+        alSourcei(mainSourceBuffer, AL_BUFFER, OpenAL::soundFinal);
         OpenAL::CheckError("source-sound-assignment");
 
 
         OpenAL::PlaySound(mainSourceBuffer, sourceState);
+
+        // Free sound data memory.
+        SoundIO::DestorySoundData(OpenAL::soundDataFinal);
     }
 
 
@@ -212,13 +214,13 @@ int main(int argumentsCount, char** arguments) {
             OpenAL::DestorySound(soundBuffor);
         }
 
-        OpenAL::DestorySound(soundFinal);
+        OpenAL::DestorySound(OpenAL::soundFinal);
 
         for (auto&& sound : soundsData) {
             SoundIO::DestorySoundData(sound);
         }
 
-        SoundIO::DestorySoundData(soundDelayed);
+        //SoundIO::DestorySoundData(OpenAL::soundDataFinal);
 
         OpenAL::DestoryContext(context);
         OpenAL::DestoryDevice(device);

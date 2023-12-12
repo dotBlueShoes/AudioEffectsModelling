@@ -1,5 +1,13 @@
 #include "PhaserAudioEffect.h"
 
+void PhaserAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
+    //wetSoundSize = drySoundSize + Math::MilisecondsToSample(delay, 44100);
+}
+
+void PhaserAudioEffect::applyEffect() {
+        // Implementation specific to DelayAudioEffect
+}
+
 void PhaserAudioEffect::DisplayEffectWindow()
 {
     const char STRING_EFFECT_BASIC_DELAY[] = "Effect Phaser ";

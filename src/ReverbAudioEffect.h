@@ -10,9 +10,10 @@ private:
 	int delay3 = 0;
 	int delay4 = 0;
 public:
-	void applyEffect() override {
-		// Implementation specific to DelayAudioEffect
-	}
+
+	void getWetSoundSize(const size& drySoundSize, size& wetSoundSize) override;
+
+	void applyEffect() override;
 
 	ReverbAudioEffect() : AudioEffect() {};
 	void DisplayEffectWindow() override;

@@ -1,5 +1,13 @@
 #include "DistortionAudioEffect.h"
 
+void DistortionAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
+
+}
+
+void DistortionAudioEffect::applyEffect() {
+
+}
+
 void DistortionAudioEffect::DisplayEffectWindow()
 {
     const char STRING_EFFECT_BASIC_DELAY[] = "Effect Distortion ";

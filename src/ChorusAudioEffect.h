@@ -12,9 +12,10 @@ private:
 	int wet = 0;
 	int dry = 0;
 public:
-	void applyEffect() override {
-		// Implementation specific to DelayAudioEffect
-	}
+
+	void getWetSoundSize(const size& drySoundSize, size& wetSoundSize) override;
+
+	void applyEffect() override;
 
 	ChorusAudioEffect() : AudioEffect() {};
 	void DisplayEffectWindow() override;

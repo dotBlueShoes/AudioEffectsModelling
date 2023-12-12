@@ -12,9 +12,10 @@ private:
 	float intensity = 0;
 	int stages = 0;
 public:
-	void applyEffect() override {
-		// Implementation specific to DelayAudioEffect
-	}
+	
+	void getWetSoundSize(const size& drySoundSize, size& wetSoundSize) override;
+
+	void applyEffect() override;
 
 	PhaserAudioEffect() : AudioEffect(){};
 	void DisplayEffectWindow() override;

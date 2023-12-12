@@ -1,5 +1,14 @@
 #include "ReverbAudioEffect.h"
 
+void ReverbAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
+    //wetSoundSize = drySoundSize + Math::MilisecondsToSample(delay, 44100);
+}
+
+void ReverbAudioEffect::applyEffect() {
+        // Implementation specific to DelayAudioEffect
+}
+
+
 void ReverbAudioEffect::DisplayEffectWindow()
 {
     const char STRING_EFFECT_BASIC_DELAY[] = "Effect Reverb ";
