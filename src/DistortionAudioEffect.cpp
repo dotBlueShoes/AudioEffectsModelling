@@ -31,7 +31,7 @@ void DistortionAudioEffect::DisplayEffectWindow()
 
     ImGui::SliderInt("Type [0, 1]", &type, 0, 1);
     ImGui::SliderFloat("Gain [-]", &gain, 0, 10);
-    ImGui::SliderFloat("Gain [-]", &kParameter, 0, 10);
+    ImGui::SliderFloat("Parameter k [-]", &kParameter, 0, 10);
 
 
     ImGui::End();
