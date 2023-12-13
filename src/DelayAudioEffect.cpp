@@ -42,16 +42,18 @@ void DelayAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadW
     //}
 
 
-    for (size i = 0; i < cachedDrySoundSize; ++i) {
-        wetSound.pcmData[delayInSamples + i] = wetSound.pcmData[delayInSamples + i] + ((float)(drySoundData[i]) * feedbackNormalized);
-    }
+    
 
     // Brak initial delay!!!!
 
     // 4400, 8800, 17600
     const auto&& effectStart = cachedWetSoundSize - originalSoundSize;
 
-    spdlog::info("s: {}, a: {}", effectStart, cachedDrySoundSize);
+    spdlog::info("s: {}, a: {}, b: {}", effectStart, cachedDrySoundSize, wetSound.pcmSize);
+
+    for (size i = 0; i < cachedDrySoundSize; ++i) {
+        wetSound.pcmData[effectStart + i] = wetSound.pcmData[effectStart + i] + ((float)(drySoundData[i]) * feedbackNormalized);
+    }
 
     //for (size i = 0; i < cachedDrySoundSize; ++i) {
     //    auto&& currentSample = wetSound.pcmData[effectStart + i];
