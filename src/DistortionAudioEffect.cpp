@@ -1,10 +1,22 @@
 #include "DistortionAudioEffect.h"
+#include <iostream>
+
+
 
 void DistortionAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
 
 }
 
-void DistortionAudioEffect::applyEffect(const int16_t* drySoundData, SoundIO::ReadWavData& sound) {
+void DistortionAudioEffect::applyEffect(const int16_t* drySoundData, SoundIO::ReadWavData& sound)
+{
+    if (type == 0)
+    {
+        wetSound = gain * ((drySound * 3.0f) / 2.0f) * (1.0f - ((drySound * drySound) / 3.0f));
+    }
+    else if (type == 1)
+    {
+        wetSound = gain * (tanh(drySound * kParameter) / tanh(drySound));
+    }
 
 }
 
@@ -19,7 +31,7 @@ void DistortionAudioEffect::DisplayEffectWindow()
 
     ImGui::SliderInt("Type [0, 1]", &type, 0, 1);
     ImGui::SliderFloat("Gain [-]", &gain, 0, 10);
-
+    ImGui::SliderFloat("Parameter k [-]", &kParameter, 0, 10);
 
 
     ImGui::End();
