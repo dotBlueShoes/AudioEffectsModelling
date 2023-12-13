@@ -28,16 +28,23 @@ void DelayAudioEffect::applyEffect(const int16_t* aaa, SoundIO::ReadWavData& wet
 
     //spdlog::info("copied");
 
+    //spdlog::info("f: {}", feedbackNormalized);
+
     for (size i = 0; i < cachedDrySoundSize; ++i) {
         wetSound.pcmData[i] *= feedbackNormalized;
     }
 
     //spdlog::info("ws: {}", wetSound.pcmSize);
     
+    //uint64_t temp = 0;
+
     // Add delayed sound
     for (size i = 0; i < cachedDrySoundSize; ++i) {
+        //temp += wetSound.pcmData[delayInSamples + i] < 0;
         wetSound.pcmData[delayInSamples + i] += drySoundData[i];
     }
+
+    //spdlog::info("t: {}, {}", temp, delayInSamples);
 
     delete[] drySoundData;
 

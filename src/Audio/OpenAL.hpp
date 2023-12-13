@@ -267,11 +267,11 @@ namespace OpenAL {
         //    finalWetSoundData[i] = 0;
         //}
 
-        const auto&& typedSize = originalSoundSize * 2 /* int16 */;
+
         // Fill the array with the original sound data. 
-        std::memcpy(finalWetSoundData, originalSoundData, typedSize);
+        std::memcpy(finalWetSoundData, originalSoundData, originalSoundSize * 2 /* int16 */);
         // Fill rest with 0'es
-        std::memset((finalWetSoundData + originalSoundSize), 0, finalWetSoundSize - originalSoundSize);
+        std::memset((finalWetSoundData + originalSoundSize), 0, (finalWetSoundSize - originalSoundSize) * 2 /* int16 */);
 
         //for (size i = originalSoundSize; i < finalWetSoundSize; ++i) {
         //    finalWetSoundData[i] = 0;
