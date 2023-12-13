@@ -164,14 +164,14 @@ namespace Controls {
 
                 case AL_STOPPED: {
                     if (ImGui::Button("Play")) {
-                        spdlog::info("OpenGL: STOPPED - PlaySound");
+                        spdlog::info("OpenGL: PLAYING - PlaySound");
                         OpenAL::PlaySound(currentSource, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
                     }
                 } break;
 
                 case AL_PLAYING: {
                     if (ImGui::Button("Stop")) {
-                        spdlog::info("OpenGL: PLAYING - StopSound");
+                        spdlog::info("OpenGL: STOPPED - StopSound");
                         OpenAL::StopSound(currentSource);
                     }
                 } break;

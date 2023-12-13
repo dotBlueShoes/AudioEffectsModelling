@@ -20,29 +20,31 @@ void DelayAudioEffect::applyEffect(const int16_t* aaa, SoundIO::ReadWavData& wet
     auto&& delayInSamples = Math::MilisecondsToSample(delay, 44100);
     auto&& feedbackNormalized = Math::NormalizePercent(feedback);
 
-    //spdlog::info("c: {}", cachedDrySoundSize);
+    spdlog::info("a: {}, b: {}", cachedDrySoundSize, cachedWetSoundSize);
+    spdlog::info("f: {}", feedbackNormalized);
 
     // Create a copy of unmodified data buffor.
     int16_t* drySoundData = new int16_t[cachedDrySoundSize];
     std::memcpy(drySoundData, wetSound.pcmData, cachedDrySoundSize * 2 /* int16 */);
 
-    //spdlog::info("copied");
-
-    //spdlog::info("f: {}", feedbackNormalized);
-
-    for (size i = 0; i < cachedDrySoundSize; ++i) {
-        wetSound.pcmData[i] *= feedbackNormalized;
-    }
+    //for (size i = 0; i < cachedDrySoundSize; ++i) {
+    //    wetSound.pcmData[i] *= feedbackNormalized;
+    //}
 
     //spdlog::info("ws: {}", wetSound.pcmSize);
     
     //uint64_t temp = 0;
 
     // Add delayed sound
+    //for (size i = 0; i < cachedDrySoundSize; ++i) {
+    //    //temp += wetSound.pcmData[delayInSamples + i] < 0;
+    //    wetSound.pcmData[delayInSamples + i] = wetSound.pcmData[delayInSamples + i] + drySoundData[i];
+    //}
+
     for (size i = 0; i < cachedDrySoundSize; ++i) {
-        //temp += wetSound.pcmData[delayInSamples + i] < 0;
-        wetSound.pcmData[delayInSamples + i] += drySoundData[i];
+        wetSound.pcmData[delayInSamples + i] = wetSound.pcmData[delayInSamples + i] + ((float)(drySoundData[i]) * feedbackNormalized);
     }
+
 
     //spdlog::info("t: {}, {}", temp, delayInSamples);
 
