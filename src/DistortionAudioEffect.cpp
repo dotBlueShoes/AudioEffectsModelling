@@ -10,7 +10,7 @@ void DistortionAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetS
     cachedWetSoundSize = wetSoundSize;
 }
 
-void DistortionAudioEffect::applyEffect(const int16_t* drySoundData, SoundIO::ReadWavData& sound)
+void DistortionAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound)
 {
     // Variables for normalization
     float maxVal = 0.0f;

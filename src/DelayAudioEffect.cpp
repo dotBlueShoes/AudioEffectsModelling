@@ -15,12 +15,12 @@ void DelayAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundS
 }
 
 
-void DelayAudioEffect::applyEffect(const int16_t* aaa, SoundIO::ReadWavData& wetSound) {
+void DelayAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& wetSound) {
 
     auto&& delayInSamples = Math::MilisecondsToSample(delay, 44100);
     auto&& feedbackNormalized = Math::NormalizePercent(feedback);
 
-    spdlog::info("a: {}, b: {}", cachedDrySoundSize, cachedWetSoundSize);
+    spdlog::info("a: {}, b: {}, c: {}", cachedDrySoundSize, cachedWetSoundSize, delayInSamples);
     spdlog::info("f: {}", feedbackNormalized);
 
     // Create a copy of unmodified data buffor.
@@ -41,9 +41,22 @@ void DelayAudioEffect::applyEffect(const int16_t* aaa, SoundIO::ReadWavData& wet
     //    wetSound.pcmData[delayInSamples + i] = wetSound.pcmData[delayInSamples + i] + drySoundData[i];
     //}
 
+
     for (size i = 0; i < cachedDrySoundSize; ++i) {
         wetSound.pcmData[delayInSamples + i] = wetSound.pcmData[delayInSamples + i] + ((float)(drySoundData[i]) * feedbackNormalized);
     }
+
+    // Brak initial delay!!!!
+
+    // 4400, 8800, 17600
+    const auto&& effectStart = cachedWetSoundSize - originalSoundSize;
+
+    spdlog::info("s: {}, a: {}", effectStart, cachedDrySoundSize);
+
+    //for (size i = 0; i < cachedDrySoundSize; ++i) {
+    //    auto&& currentSample = wetSound.pcmData[effectStart + i];
+    //    currentSample = delayInSamples + ((float)(drySoundData[i]) * feedbackNormalized);
+    //}
 
 
     //spdlog::info("t: {}, {}", temp, delayInSamples);

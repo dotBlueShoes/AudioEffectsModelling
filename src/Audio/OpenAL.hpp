@@ -293,7 +293,7 @@ namespace OpenAL {
 
         // Applay effect for each in queue.
         for (auto&& effect : Effects::effectsQueue) {
-            effect->applyEffect(0, OpenAL::Effects::soundDataFinal);
+            effect->applyEffect(originalSoundSize, OpenAL::Effects::soundDataFinal);
         }
 
 

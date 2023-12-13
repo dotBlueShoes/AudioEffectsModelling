@@ -15,7 +15,7 @@ public:
 	
 	void getWetSoundSize(const size& drySoundSize, size& wetSoundSize) override;
 
-	void applyEffect(const int16_t* drySoundData, SoundIO::ReadWavData& sound) override;
+	void applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) override;
 
 	PhaserAudioEffect() : AudioEffect(){};
 	void DisplayEffectWindow() override;

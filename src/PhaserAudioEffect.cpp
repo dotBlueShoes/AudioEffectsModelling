@@ -4,7 +4,7 @@ void PhaserAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSound
     //wetSoundSize = drySoundSize + Math::MilisecondsToSample(delay, 44100);
 }
 
-void PhaserAudioEffect::applyEffect(const int16_t* drySoundData, SoundIO::ReadWavData& sound) {
+void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) {
         // Implementation specific to DelayAudioEffect
 }
 
