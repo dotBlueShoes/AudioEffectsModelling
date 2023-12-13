@@ -91,6 +91,7 @@ int main(int argumentsCount, char** arguments) {
     Controls::DrawCallParams drawCallParams {
         backgroundColor,
         SOUNDS::SOUND_FILES.size(),
+        soundsData.data(),
         monoSounds.data(),
         monoSources.data(),
         sourceState,
@@ -111,66 +112,66 @@ int main(int argumentsCount, char** arguments) {
 
     
 
-    { // Delay Effect
-
-        // Get delay time in samples from effect.
-        const uint16_t delayInSamples = 18210;
-        const float feedbackNormalized = 0.1;
-
-        auto&& selectedSound = soundsData[0];
-        auto&& drySoundSize = selectedSound.pcmSize;
-        auto&& drySoundData = selectedSound.pcmData;
-
-        // Count required space for whole sound.
-
-        // in 
-        size wetSoundSize = drySoundSize + delayInSamples;
-
-        // Reserve space and Fill with initial PCM data.
-        int16_t* pcmDelayed = new int16_t[wetSoundSize];
-        {
-            size i = 0;
-            for (; i < drySoundSize; ++i) {
-                pcmDelayed[i] = drySoundData[i];
-            }
-        
-            for (; i < wetSoundSize; ++i) {
-                pcmDelayed[i] = 0;
-            }
-        }
-        
-
-        // Create a copy of the original sound. with new pcm data.
-        OpenAL::soundDataFinal = SoundIO::ReadWavData { selectedSound.channels, selectedSound.sampleRate, selectedSound.totalPCMFrameCount, wetSoundSize, pcmDelayed };
-        
-        {   // Calculate new sound.
-            
-            // Calc. feedback
-            for (size i = 0; i < drySoundSize; ++i) {
-                OpenAL::soundDataFinal.pcmData[i] *= feedbackNormalized;
-            }
-
-            // Add delayed sound
-            for (size i = 0; i < drySoundSize; ++i) {
-                OpenAL::soundDataFinal.pcmData[delayInSamples + i] += drySoundData[i];
-            }
-        }
-        
-
-
-        // Create buffor and load data into it for newly created sound.
-        OpenAL::soundFinal = OpenAL::CreateMonoSound(OpenAL::soundDataFinal);
-
-
-        alSourcei(mainSourceBuffer, AL_BUFFER, OpenAL::soundFinal);
-        OpenAL::CheckError("source-sound-assignment");
-
-
-        OpenAL::PlaySound(mainSourceBuffer, sourceState);
-
-        // Free sound data memory.
-        SoundIO::DestorySoundData(OpenAL::soundDataFinal);
-    }
+    //{ // Delay Effect
+    //
+    //    // Get delay time in samples from effect.
+    //    const uint16_t delayInSamples = 18210;
+    //    const float feedbackNormalized = 0.1;
+    //
+    //    auto&& selectedSound = soundsData[0];
+    //    auto&& drySoundSize = selectedSound.pcmSize;
+    //    auto&& drySoundData = selectedSound.pcmData;
+    //
+    //    // Count required space for whole sound.
+    //
+    //    // in 
+    //    size wetSoundSize = drySoundSize + delayInSamples;
+    //
+    //    // Reserve space and Fill with initial PCM data.
+    //    int16_t* pcmDelayed = new int16_t[wetSoundSize];
+    //    {
+    //        size i = 0;
+    //        for (; i < drySoundSize; ++i) {
+    //            pcmDelayed[i] = drySoundData[i];
+    //        }
+    //    
+    //        for (; i < wetSoundSize; ++i) {
+    //            pcmDelayed[i] = 0;
+    //        }
+    //    }
+    //    
+    //
+    //    // Create a copy of the original sound. with new pcm data.
+    //    OpenAL::Effects::soundDataFinal = SoundIO::ReadWavData { selectedSound.channels, selectedSound.sampleRate, selectedSound.totalPCMFrameCount, wetSoundSize, pcmDelayed };
+    //    
+    //    {   // Calculate new sound.
+    //        
+    //        // Calc. feedback
+    //        for (size i = 0; i < drySoundSize; ++i) {
+    //            OpenAL::Effects::soundDataFinal.pcmData[i] *= feedbackNormalized;
+    //        }
+    //
+    //        // Add delayed sound
+    //        for (size i = 0; i < drySoundSize; ++i) {
+    //            OpenAL::Effects::soundDataFinal.pcmData[delayInSamples + i] += drySoundData[i];
+    //        }
+    //    }
+    //    
+    //
+    //
+    //    // Create buffor and load data into it for newly created sound.
+    //    OpenAL::Effects::soundFinal = OpenAL::CreateMonoSound(OpenAL::Effects::soundDataFinal);
+    //
+    //
+    //    alSourcei(mainSourceBuffer, AL_BUFFER, OpenAL::Effects::soundFinal);
+    //    OpenAL::CheckError("source-sound-assignment");
+    //
+    //
+    //    OpenAL::PlaySound(mainSourceBuffer, sourceState);
+    //
+    //    // Free sound data memory.
+    //    SoundIO::DestorySoundData(OpenAL::Effects::soundDataFinal);
+    //}
 
 
     // Main loop
@@ -214,13 +215,11 @@ int main(int argumentsCount, char** arguments) {
             OpenAL::DestorySound(soundBuffor);
         }
 
-        OpenAL::DestorySound(OpenAL::soundFinal);
+        OpenAL::DestorySound(OpenAL::Effects::soundFinal);
 
         for (auto&& sound : soundsData) {
             SoundIO::DestorySoundData(sound);
         }
-
-        //SoundIO::DestorySoundData(OpenAL::soundDataFinal);
 
         OpenAL::DestoryContext(context);
         OpenAL::DestoryDevice(device);

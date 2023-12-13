@@ -4,7 +4,7 @@ void DistortionAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetS
 
 }
 
-void DistortionAudioEffect::applyEffect() {
+void DistortionAudioEffect::applyEffect(const int16_t* drySoundData, SoundIO::ReadWavData& sound) {
 
 }
 

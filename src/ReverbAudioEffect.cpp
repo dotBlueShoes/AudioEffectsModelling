@@ -4,7 +4,7 @@ void ReverbAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSound
     //wetSoundSize = drySoundSize + Math::MilisecondsToSample(delay, 44100);
 }
 
-void ReverbAudioEffect::applyEffect() {
+void ReverbAudioEffect::applyEffect(const int16_t* drySoundData, SoundIO::ReadWavData& sound) {
         // Implementation specific to DelayAudioEffect
 }
 

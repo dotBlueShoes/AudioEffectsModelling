@@ -1,9 +1,11 @@
 #pragma once
 #include "Framework.hpp"
-#include "SoundIO.hpp"
 
 #include <al.h>
 #include <alc.h>
+
+#include "SoundIO.hpp"
+#include "AudioEffect.h"
 
 
 // According to the OpenAL documentation https://openal.org/documentation/OpenAL_Programmers_Guide.pdf 
@@ -21,9 +23,19 @@ namespace OpenAL {
     const float MAX_GAIN = 10.0f;
 
 
-    // Final sound holders. // with effects applied.
-    SoundIO::ReadWavData soundDataFinal;
-    ALuint soundFinal;
+    namespace Effects {
+
+        using EffectsQueue = std::vector<std::unique_ptr<AudioEffect>>;
+
+        //const ALuint UNINITIALIZED_SOUND = 999;
+
+        EffectsQueue effectsQueue;
+
+        // Final sound holders. // with effects applied.
+        SoundIO::ReadWavData soundDataFinal;
+        ALuint soundFinal; // = UNINITIALIZED_SOUND;
+
+    }
 
 
     auto CheckError(
@@ -52,6 +64,29 @@ namespace OpenAL {
                 std::cerr << OPENAL_ERROR << "UNKNOWN: " << errorCode << " with: " << message << std::endl;
                 return;
         }
+    }
+
+
+    auto DestroySource(ALuint& source) {
+        alDeleteSources(1, &source);
+        OpenAL::CheckError("destory-source");
+    }
+
+
+    auto DestorySound(ALuint& soundBuffer) {
+        alDeleteBuffers(1, &soundBuffer);
+        OpenAL::CheckError("destory-sound");
+    }
+
+
+    auto DestoryContext(ALCcontext* context) {
+        alcMakeContextCurrent(nullptr);
+        alcDestroyContext(context);
+    }
+
+
+    auto DestoryDevice(ALCdevice* device) {
+        alcCloseDevice(device);
     }
 
 
@@ -197,49 +232,98 @@ namespace OpenAL {
         return stereoSource;
     }
 
-    auto PlaySound(const ALuint& source, ALint& sourceState) {
+    auto StopSound(const ALuint& source) {
+        alSourceStop(source);
 
-        alSourcePlay(source);
-        OpenAL::CheckError("13");
+        // unbing source buffors 
+        alSourcei(source, AL_BUFFER, NULL);
 
-        alGetSourcei(source, AL_SOURCE_STATE, &sourceState);
-        OpenAL::CheckError("14");
+        DestorySound(Effects::soundFinal);
+    }
 
-        //while (sourceState == AL_PLAYING) {
-        //    // Loop until we're done playing the sound.
-        //    // https://learn.microsoft.com/en-us/dotnet/api/opentk.audio.openal.algetsourcei?view=xamarin-ios-sdk-12
-        //    // I believe that audio could be changed while its playing using these. If not the audio could always be 
-        //    //  stopped at and played from a specific sample.
-        //    alGetSourcei(source, AL_SOURCE_STATE, &sourceState);
-        //    OpenAL::CheckError("15");
+    auto PlaySound(const ALuint& source, const SoundIO::ReadWavData& originalSound, ALint& sourceState) {
+
+        auto&& originalSoundSize = originalSound.pcmSize;
+        auto&& originalSoundData = originalSound.pcmData;
+
+        size finalWetSoundSize = originalSoundSize;
+
+        // Get final sound size.
+        for (auto&& effect : Effects::effectsQueue) {
+            effect->getWetSoundSize(finalWetSoundSize, finalWetSoundSize);
+        }
+
+        // Initialize final sound size.
+        int16_t* finalWetSoundData = new int16_t[finalWetSoundSize];
+
+
+        // Fill the array with the original sound data. 
+        //size i = 0;
+        //for (; i < originalSoundSize; ++i) {
+        //    finalWetSoundData[i] = originalSoundData[i]; // visual studio will tell lies.
         //}
-    }
+        // Fill rest with 0'es
+        //for (; i < finalWetSoundSize; ++i) {
+        //    finalWetSoundData[i] = 0;
+        //}
 
-    //auto StopSound(const ALuint& source) {
-    //    alSourceStop(source);
-    //}
+        const auto&& typedSize = originalSoundSize * 2 /* int16 */;
+        // Fill the array with the original sound data. 
+        std::memcpy(finalWetSoundData, originalSoundData, typedSize);
+        // Fill rest with 0'es
+        std::memset((finalWetSoundData + originalSoundSize), 0, finalWetSoundSize - originalSoundSize);
+
+        //for (size i = originalSoundSize; i < finalWetSoundSize; ++i) {
+        //    finalWetSoundData[i] = 0;
+        //}
+
+        //spdlog::info("a: {}", finalWetSoundSize - originalSoundSize);
+
+        
 
 
-    auto DestroySource(ALuint& source) {
-        alDeleteSources(1, &source);
-        OpenAL::CheckError("19");
-    }
+        // Create a copy of the original sound. with new pcm data.
+        OpenAL::Effects::soundDataFinal = SoundIO::ReadWavData { 
+            originalSound.channels, originalSound.sampleRate, originalSound.totalPCMFrameCount, 
+            finalWetSoundSize, finalWetSoundData 
+        };
 
 
-    auto DestorySound(ALuint& soundBuffer) {
-        alDeleteBuffers(1, &soundBuffer);
-        OpenAL::CheckError("21");
-    }
+        //int16_t* drySoundData = originalSoundData;
+
+        // Applay effect for each in queue.
+        for (auto&& effect : Effects::effectsQueue) {
+            effect->applyEffect(0, OpenAL::Effects::soundDataFinal);
+        }
 
 
-    auto DestoryContext(ALCcontext* context) {
-        alcMakeContextCurrent(nullptr);
-        alcDestroyContext(context);
-    }
+        // Create buffor and load data into it for newly created sound.
+        Effects::soundFinal = CreateMonoSound(Effects::soundDataFinal);
 
+        // Load sound into source.
+        alSourcei(source, AL_BUFFER, Effects::soundFinal);
+        CheckError("source-sound-assignment");
+
+        // Play it!
+        alSourcePlay(source);
+        CheckError("play-source");
     
-    auto DestoryDevice(ALCdevice* device) {
-        alcCloseDevice(device);
+        // Free sound data memory.
+        SoundIO::DestorySoundData(Effects::soundDataFinal);
+
+
+        //spdlog::info("Final Size: {}", finalWetSoundSize);
+
+        //delete[] finalWetSoundData;
+
+        // fix source assignment first!
+
+        //alSourcePlay(source);
+        //OpenAL::CheckError("13");
+
+        //alGetSourcei(source, AL_SOURCE_STATE, &sourceState);
+        //OpenAL::CheckError("14");
+
     }
 
 }

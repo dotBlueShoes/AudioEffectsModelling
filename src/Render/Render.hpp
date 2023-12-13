@@ -92,14 +92,21 @@ namespace Controls {
     struct DrawCallParams {
         // Window draw
         ImVec4 backgroundColor;
+
         // Sounds
-        size_t soundsCount;
+        size soundsCount;
+        SoundIO::ReadWavData* soundsData;
         ALuint* sounds;
         ALuint* sources;
+        
+
         ALint sourceState;
+
         //size_t sound_index = 0;
         float pitch = 1.0f, gain = 1.0f;
     };
+
+    size selectedOriginalSoundIndex = 0;
 
     void DrawSampleSelection(DrawCallParams& drawCallParams) {
         const char STRING_SAMPLE_SELECTION[] = "Sample Selection";
@@ -114,7 +121,7 @@ namespace Controls {
 
             ImGui::Text("Nylon Strings");
 
-            for (size_t i = 0; i < drawCallParams.soundsCount; ++i) {
+            for (size i = 0; i < drawCallParams.soundsCount; ++i) {
 
                 // Format Control Name
                 array<char, 11> controlName = controlBase;
@@ -131,10 +138,13 @@ namespace Controls {
 
                     // Stop currently playing sound on source.
                     spdlog::info("OpenGL: PLAYING - StopSound");
-                    alSourceStop(drawCallParams.sources[0]);
+                    OpenAL::StopSound(currentSource);
 
-                    alSourcei(currentSource, AL_BUFFER, drawCallParams.sounds[i]);
-                    OpenAL::CheckError("7");
+                    // Instead send that information to the play func so we aplly effects and create a new sound ...
+                    //alSourcei(currentSource, AL_BUFFER, drawCallParams.sounds[i]);
+                    //OpenAL::CheckError("7");
+
+                    selectedOriginalSoundIndex = i;
 
                 }
 
@@ -142,34 +152,42 @@ namespace Controls {
 
             }
 
-            if (ImGui::Button("Play")) {
-                alGetSourcei(currentSource, AL_SOURCE_STATE, &drawCallParams.sourceState);
-                switch (drawCallParams.sourceState) {
-                    case AL_INITIAL: {
+            
+            alGetSourcei(currentSource, AL_SOURCE_STATE, &drawCallParams.sourceState);
+            switch (drawCallParams.sourceState) {
+                case AL_INITIAL: {
+                    if (ImGui::Button("Play")) {
                         spdlog::info("OpenGL: INITIAL - PlaySound");
-                        OpenAL::PlaySound(currentSource, drawCallParams.sourceState);
-                    } break;
-
-                    case AL_STOPPED: {
-                        spdlog::info("OpenGL: STOPPED - PlaySound");
-                        OpenAL::PlaySound(currentSource, drawCallParams.sourceState);
-                    } break;
-
-                    case AL_PLAYING: {
-                        spdlog::info("OpenGL: PLAYING - StopSound");
-                        alSourceStop(currentSource);
-                    } break;
-
-                    case AL_PAUSED: {
-                        spdlog::info("OpenGL: PAUSED - PlaySound");
-                        OpenAL::PlaySound(currentSource, drawCallParams.sourceState);
-                    } break;
-
-                    default: {
-                        spdlog::error("OPENGL: NOT A VALID ENUM VALUE");
+                        OpenAL::PlaySound(currentSource, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
                     }
+                } break;
+
+                case AL_STOPPED: {
+                    if (ImGui::Button("Play")) {
+                        spdlog::info("OpenGL: STOPPED - PlaySound");
+                        OpenAL::PlaySound(currentSource, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
+                    }
+                } break;
+
+                case AL_PLAYING: {
+                    if (ImGui::Button("Stop")) {
+                        spdlog::info("OpenGL: PLAYING - StopSound");
+                        OpenAL::StopSound(currentSource);
+                    }
+                } break;
+
+                case AL_PAUSED: {
+                    if (ImGui::Button("Resume")) {
+                        spdlog::info("OpenGL: PAUSED - PlaySound");
+                        OpenAL::PlaySound(currentSource, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
+                    }
+                } break;
+
+                default: {
+                    spdlog::error("OPENGL: NOT A VALID ENUM VALUE");
                 }
             }
+            
 
             ImGui::SameLine();
 
@@ -210,7 +228,6 @@ namespace Controls {
 
 
     vector<int> effects_queue;
-    std::vector<std::unique_ptr<AudioEffect>> effects_queue_temp;
 
     auto DrawEffectQueue() {
 
@@ -225,10 +242,10 @@ namespace Controls {
 
        if (ImGui::Button("Clear Effects")) {
             effects_queue.clear();
-            effects_queue_temp.clear();
+            OpenAL::Effects::effectsQueue.clear();
         }
 
-        for (size_t i = 0; i < effects_queue.size(); ++i) {
+        for (size_t i = 0; i < OpenAL::Effects::effectsQueue.size(); ++i) {
 
             const char* items[] = { "Remove", Effects::STRING_DISTORTION, Effects::STRING_DELAY, Effects::STRING_PHASER, Effects::STRING_CHORUS, Effects::STRING_REVERB };
             //static int item_current_idx = 0; // Here we store our selection data as an index.
@@ -252,22 +269,22 @@ namespace Controls {
                                 isGoingToBeRemoved = i;
                                 break;
                             case 1:
-                                effects_queue_temp[i] = std::make_unique<DistortionAudioEffect>();
+                                OpenAL::Effects::effectsQueue[i] = std::make_unique<DistortionAudioEffect>();
                                 break;
                             case 2:
-                                effects_queue_temp[i] = std::make_unique<DelayAudioEffect>();
+                                OpenAL::Effects::effectsQueue[i] = std::make_unique<DelayAudioEffect>();
                                 break;
                             case 3:
-                                effects_queue_temp[i] = std::make_unique<PhaserAudioEffect>();
+                                OpenAL::Effects::effectsQueue[i] = std::make_unique<PhaserAudioEffect>();
                                 break;
                             case 4:
-                                effects_queue_temp[i] = std::make_unique<ChorusAudioEffect>();
+                                OpenAL::Effects::effectsQueue[i] = std::make_unique<ChorusAudioEffect>();
                                 break;
                             case 5:
-                                effects_queue_temp[i] = std::make_unique<ReverbAudioEffect>();
+                                OpenAL::Effects::effectsQueue[i] = std::make_unique<ReverbAudioEffect>();
                                 break;
                         }
-                        effects_queue_temp[i]->setWindowNumber(i);
+                        OpenAL::Effects::effectsQueue[i]->setWindowNumber(i);
                         // replace with switch 
                         //  as not only queue is being formed here.
                         // but also additional windows for each effect should be shown/changed with selection.
@@ -288,113 +305,25 @@ namespace Controls {
 
         if (isGoingToBeRemoved >= 0) {
             effects_queue.erase(effects_queue.begin() + isGoingToBeRemoved);
-            effects_queue_temp.erase(effects_queue_temp.begin() + isGoingToBeRemoved);
+            OpenAL::Effects::effectsQueue.erase(OpenAL::Effects::effectsQueue.begin() + isGoingToBeRemoved);
             isGoingToBeRemoved = -1;
         }
 
         if (ImGui::Button("Add Effect")) {
             effects_queue.push_back(1);
-            effects_queue_temp.push_back(std::make_unique<DistortionAudioEffect>());
-            effects_queue_temp.back()->setWindowNumber(effects_queue_temp.size() - 1);
+            OpenAL::Effects::effectsQueue.push_back(std::make_unique<DistortionAudioEffect>());
+            OpenAL::Effects::effectsQueue.back()->setWindowNumber(OpenAL::Effects::effectsQueue.size() - 1);
         }
 
         ImGui::End();
     }
 
-    auto DrawEffectBasicDelay() {
-        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Basic Delay";
-        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
-
-        static float feedback = 0;
-        static int delay = 0;
-
-        ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
-        ImGui::SliderInt("Delay [ms]", &delay, 0, 1000);
-
-        ImGui::End();
-    }
-
-    auto DrawEffectReverb() {
-        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Reverb";
-        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
-
-        static int delay1 = 0;
-        static int delay2 = 0;
-        static int delay3 = 0;
-        static int delay4 = 0;
-
-        ImGui::SliderInt("Delay 1 [-]", &delay1, 0, 4000);
-        ImGui::SliderInt("Delay 2 [-]", &delay2, 0, 4000);
-        ImGui::SliderInt("Delay 3 [-]", &delay3, 0, 4000);
-        ImGui::SliderInt("Delay 4 [-]", &delay4, 0, 4000);
-
-        ImGui::End();
-    }
-
-    auto DrawEffectChorus() {
-        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Chorus";
-        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
-
-        static int delay = 0;
-        static int depth = 0;
-        static int sampleRate = 0;
-        static float feedback = 0;
-        static int wet = 0;
-        static int dry = 0;
-
-        ImGui::SliderInt("Delay [ms]", &delay, 0, 1000);
-        ImGui::SliderInt("Depth [ms]", &depth, 0, 1000);
-        ImGui::SliderInt("SampleRate [Hz]", &sampleRate, 0, 1000);
-        ImGui::SliderFloat("Feedback [%]", &feedback, 0, 1000);
-        ImGui::SliderInt("Wet [dB]", &wet, -32, 32);
-        ImGui::SliderInt("Dry [dB]", &dry, -32, 32);
-
-        ImGui::End();
-    }
-
-    auto DrawEffectDistortion() {
-        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Distortion";
-        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
-
-        static int type = 0;
-        static float gain = 0;
-        static int dry = 0;
-        static int wet = 0;
-
-        ImGui::SliderInt("Type [0, 1]", &type, 0, 1);
-        ImGui::SliderFloat("Gain [-]", &gain, 0, 10);
-        ImGui::SliderInt("Dry [dB]", &dry, -32, 32);
-        ImGui::SliderInt("Wet [dB]", &wet, -32, 32);
-
-        ImGui::End();
-    }
-
-    auto DrawEffectPhaser() {
-        const char STRING_EFFECT_BASIC_DELAY[] = "Effect Phaser";
-        ImGui::Begin(STRING_EFFECT_BASIC_DELAY);
-
-        static float feedback = 0;
-        static int rate = 0;
-        static float depth = 0;
-        static float offset = 0;
-        static float intensity = 0;
-        static int stages = 0;
-
-        ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
-        ImGui::SliderInt("Rate [ms]", &rate, 0, 1000);
-        ImGui::SliderFloat("Depth [%]", &depth, 0, 100);
-        ImGui::SliderFloat("Offset [-]", &offset, -1.0, 1.0);
-        ImGui::SliderFloat("Intensity [%]", &intensity, 0, 100);
-        ImGui::SliderInt("Stages [ms]", &stages, 1, 3);
-
-        ImGui::End();
-    }
 
     auto DrawCall(DrawCallParams& drawCallParams) {
 
         DrawSampleSelection(drawCallParams);
         DrawEffectQueue();
-        for (auto& effect : effects_queue_temp) {
+        for (auto& effect : OpenAL::Effects::effectsQueue) {
             effect->DisplayEffectWindow();
         }
 
