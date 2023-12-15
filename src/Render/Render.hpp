@@ -138,7 +138,7 @@ namespace Controls {
 
                     // Stop currently playing sound on source.
                     spdlog::info("OpenGL: PLAYING - StopSound");
-                    OpenAL::StopSound(currentSource);
+                    //OpenAL::StopSound(currentSource);
 
                     // Instead send that information to the play func so we aplly effects and create a new sound ...
                     //alSourcei(currentSource, AL_BUFFER, drawCallParams.sounds[i]);
@@ -165,6 +165,7 @@ namespace Controls {
                 case AL_STOPPED: {
                     if (ImGui::Button("Play")) {
                         spdlog::info("OpenGL: PLAYING - PlaySound");
+                        OpenAL::StopSound(currentSource);
                         OpenAL::PlaySound(currentSource, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
                     }
                 } break;
