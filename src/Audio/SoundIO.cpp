@@ -36,6 +36,9 @@ namespace SoundIO {
     
     
     void DestorySoundData(ReadWavData& sound) {
+        //for (size i = 0; i < sound.pcmSize; ++i) {
+        //    delete sound.pcmData[i];
+        //}
         delete[] sound.pcmData;
     }
     

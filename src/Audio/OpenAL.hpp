@@ -270,7 +270,7 @@ namespace OpenAL {
 
         // Fill the array with the original sound data. 
         std::memcpy(finalWetSoundData, originalSoundData, originalSoundSize * 2 /* int16 */);
-        // Fill rest with 0'es
+        // Fill rest with 0'es // !!! That might not be needed tho!
         std::memset((finalWetSoundData + originalSoundSize), 0, (finalWetSoundSize - originalSoundSize) * 2 /* int16 */);
 
         //for (size i = originalSoundSize; i < finalWetSoundSize; ++i) {
