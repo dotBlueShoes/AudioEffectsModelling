@@ -24,5 +24,8 @@ void PhaserAudioEffect::DisplayEffectWindow()
     ImGui::SliderFloat("Intensity [%]", &intensity, 0, 100);
     ImGui::SliderInt("Stages [ms]", &stages, 1, 3);
 
+    ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
+    ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
+
     ImGui::End();
 }

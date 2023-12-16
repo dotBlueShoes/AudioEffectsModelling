@@ -16,36 +16,44 @@ void DelayAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadW
 
     auto&& delayInSamples = cachedDelayInSamples;
     auto&& feedbackNormalized = Math::NormalizePercent(feedback);
+    auto&& dryNormalized = Math::NormalizePercent(dry);
+    auto&& wetNormalized = Math::NormalizePercent(wet);
 
     // Create a copy of yet unmodified data buffor.
     int16_t* drySoundData = new int16_t[cachedDrySoundSize];
     std::memcpy(drySoundData, wetSound.pcmData, cachedDrySoundSize * 2 /* int16 */);
 
-    // Apply 1st delay.
-    std::memset(wetSound.pcmData, 0, delayInSamples * 2 /* int16 */);
-    std::memcpy(wetSound.pcmData + delayInSamples, drySoundData, cachedDrySoundSize * 2 /* int16 */);
+    { // Apply wet layer. 
 
-    // 50% = 100%
-    // 25% = 50%
-    // 12.5% = 25%
-    // 6.25% = 12.5%
+        { // Apply 1st delay.
+            // 0'ed sound for delayInSamples value.
+            std::memset(wetSound.pcmData, 0, delayInSamples * 2 /* int16 */);
 
-    // Apply echo.
-    for (size i = 1; i < iterations; ++i) {
-        for (size j = 0; j < cachedDrySoundSize; ++j) {
-            auto&& sample = wetSound.pcmData[(delayInSamples * (i + 1)) + j];
-            
-            sample = sample + ((float)(drySoundData[j]) * std::pow(feedbackNormalized, (i + 1))); //* (feedbackNormalized * (i + 1)));
+            // Set the 1'st echo sound with said wet% level and feedback.
+            for (size i = 0; i < cachedDrySoundSize; ++i) {
+                auto&& sample = wetSound.pcmData[delayInSamples + i];
+                sample = (float)(drySoundData[i]) * wetNormalized * feedbackNormalized;
+            }
+        }
+
+        // Apply echo.
+        for (size i = 1; i < iterations; ++i) {
+            for (size j = 0; j < cachedDrySoundSize; ++j) {
+                auto&& sample = wetSound.pcmData[(delayInSamples * (i + 1)) + j];
+
+                sample = sample + ((float)(drySoundData[j]) * std::pow(feedbackNormalized, (i + 1)));
+            }
         }
     }
 
-    delete[] drySoundData;
+    // Apply dry layer.
+    for (size i = 0; i < cachedDrySoundSize; ++i) {
+        auto&& sample = wetSound.pcmData[i];
+        sample = sample + ((float)(drySoundData[i]) * dryNormalized);
 
-    // Set the rest with feedback gain.
-    //for (size i = 0; i < cachedDrySoundSize; ++i) {
-    //    auto&& sample = wetSound.pcmData[delayInSamples + i];
-    //    sample = sample + ((float)(drySoundData[i]) * feedbackNormalized);
-    //}
+    }
+
+    delete[] drySoundData;
 
 }
 
@@ -116,7 +124,10 @@ void DelayAudioEffect::DisplayEffectWindow()
 
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
     ImGui::SliderInt("Delay [ms]", &delay, 0, 1000);
-    ImGui::SliderInt("Iterations [ms]", &iterations, 1, 10);
+    ImGui::SliderInt("Iterations [ms]", &iterations, 1, 20);
+
+    ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
+    ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
 
     ImGui::End();
 }

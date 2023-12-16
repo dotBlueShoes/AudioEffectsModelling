@@ -23,5 +23,8 @@ void ReverbAudioEffect::DisplayEffectWindow()
     ImGui::SliderInt("Delay 3 [-]", &delay3, 0, 4000);
     ImGui::SliderInt("Delay 4 [-]", &delay4, 0, 4000);
 
+    ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
+    ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
+
     ImGui::End();
 }

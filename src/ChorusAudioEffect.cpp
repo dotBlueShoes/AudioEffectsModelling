@@ -21,8 +21,9 @@ void ChorusAudioEffect::DisplayEffectWindow()
     ImGui::SliderInt("Depth [ms]", &depth, 0, 1000);
     ImGui::SliderInt("SampleRate [Hz]", &sampleRate, 0, 1000);
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 1000);
-    ImGui::SliderInt("Wet [dB]", &wet, -32, 32);
-    ImGui::SliderInt("Dry [dB]", &dry, -32, 32);
+
+    ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
+    ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
 
     ImGui::End();
 }

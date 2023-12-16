@@ -109,6 +109,9 @@ void DistortionAudioEffect::DisplayEffectWindow()
     ImGui::SliderFloat("Gain [-]", &gain, 0, 10);
     ImGui::SliderFloat("Parameter k [-]", &kParameter, 0, 2);
 
+    ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
+    ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
+
 
     ImGui::End();
 }

@@ -7,6 +7,8 @@
 class AudioEffect
 {
 protected:
+    float wet = 100;
+    float dry = 100;
     int windowNumber = 0;
 public:
     virtual void getWetSoundSize(const size& drySoundSize, size& wetSoundSize) = 0;
