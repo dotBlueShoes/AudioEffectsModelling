@@ -13,12 +13,14 @@ double Math::UnipolarToBipolar(const double& value) {
 
 
 void LFO::Initialize(const Waveform& newWaveform, const double& newFrequency) {
-	if (newFrequency != frequency)
+	if (newFrequency != frequency) // we're scared of division i guess.
 		// Update phase inc based on osc freq and fs.
 		phaseIncremental = newFrequency / sampleRate;
 
 	frequency = newFrequency;
 	waveform = newWaveform;
+
+	spdlog::info("a: {}, b: {}", moduloCounter, phaseIncremental);
 }
 
 
