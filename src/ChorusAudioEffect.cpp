@@ -17,8 +17,8 @@ void ChorusAudioEffect::DisplayEffectWindow()
 
     ImGui::Begin(windowTitle); 
 
-    ImGui::SliderInt("Delay [ms]", &delay, 0, 1000);
-    ImGui::SliderInt("Depth [ms]", &depth, 0, 1000);
+    ImGui::SliderInt("Delay [ms]", &minDelay, 0, 1000);
+    ImGui::SliderInt("Depth [ms]", &modDepth, 0, 1000);
     ImGui::SliderInt("SampleRate [Hz]", &sampleRate, 0, 1000);
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 1000);
 

@@ -3,6 +3,7 @@
 
 #include "Audio/SoundIO.hpp"
 #include "Math.hpp"
+#include "LFO.hpp"
 
 class AudioEffect
 {
