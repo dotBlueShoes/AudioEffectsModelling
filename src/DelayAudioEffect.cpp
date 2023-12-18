@@ -123,7 +123,7 @@ void DelayAudioEffect::DisplayEffectWindow()
 
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
     ImGui::SliderInt("Delay [ms]", &delay, 0, 1000);
-    ImGui::SliderInt("Iterations [ms]", &iterations, 1, 20);
+    ImGui::SliderInt("Iterations [-]", &iterations, 1, 20);
 
     ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
     ImGui::SliderFloat("Dry [%]", &dry, 0, 100);

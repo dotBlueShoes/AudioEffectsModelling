@@ -1,11 +1,12 @@
 #include "ChorusAudioEffect.h"
 
 void ChorusAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
+    cachedHalfDepthInSamples = Math::MilisecondsToSample(depth, 44100);
     cachedHalfDelayInSamples = Math::MilisecondsToSample(delay, 44100);
 
     cachedDrySoundSize = drySoundSize;
-    wetSoundSize = drySoundSize + cachedHalfDelayInSamples;
-    cachedHalfDelayInSamples /= 2;
+    wetSoundSize = drySoundSize + cachedHalfDepthInSamples + cachedHalfDelayInSamples;
+    cachedHalfDepthInSamples /= 2;
 }
 
 void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& wetSound) {
@@ -32,10 +33,10 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     //spdlog::info("modDepth: {}", cachedHalfDelayInSamples);
 
     // Create a copy of buffor with space before and after the original sound.
-    int16_t* drySoundData = new int16_t[cachedDrySoundSize + (cachedHalfDelayInSamples * 2)];
-    std::memset(drySoundData, 0, cachedHalfDelayInSamples * 2 /* int16 */);
-    std::memcpy(drySoundData + cachedHalfDelayInSamples, wetSound.pcmData, cachedDrySoundSize * 2 /* int16 */);
-    std::memset(drySoundData + cachedDrySoundSize + cachedHalfDelayInSamples, 0, cachedHalfDelayInSamples * 2 /* int16 */);
+    int16_t* drySoundData = new int16_t[cachedDrySoundSize + (cachedHalfDepthInSamples * 2)];
+    std::memset(drySoundData, 0, cachedHalfDepthInSamples * 2 /* int16 */);
+    std::memcpy(drySoundData + cachedHalfDepthInSamples, wetSound.pcmData, cachedDrySoundSize * 2 /* int16 */);
+    std::memset(drySoundData + cachedDrySoundSize + cachedHalfDepthInSamples, 0, cachedHalfDepthInSamples * 2 /* int16 */);
 
     // spowolnienie/przyœpieszenie dzwiêku to zmiana pitchu
     // ¿eby przyœpieszyæ dzwiêk omijamy co któryœ orginalny sample
@@ -46,16 +47,17 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     // to znów mamy ten sam efekt! A nie o to chodzi!
 
     { // Apply wet layer
+        auto&& wetBeginIndex = cachedHalfDepthInSamples + cachedHalfDelayInSamples;
 
         // 0'ed sound for delayInSamples value.
-        std::memset(wetSound.pcmData, 0, cachedHalfDelayInSamples * 2 /* int16 */);
+        std::memset(wetSound.pcmData, 0, wetBeginIndex * 2 /* int16 */);
 
-        double currentIndex = cachedHalfDelayInSamples;
+        double currentIndex = wetBeginIndex;
         size j = 0;
         for (; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
             //auto&& currentLFO = lfo.RenderAudio().normal * depth;
             auto&& currentLFO = (lfo.RenderAudio().normal) + 1;
-            auto&& drySampleI = j + cachedHalfDelayInSamples;
+            auto&& drySampleI = j + wetBeginIndex;
             auto&& resultSample = wetSound.pcmData[drySampleI];
 
             //if (currentLFO < 1) {
@@ -110,7 +112,7 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     // Apply dry layer.
     for (size i = 0; i < cachedDrySoundSize; ++i) {
         auto&& sample = wetSound.pcmData[i];
-        sample = sample + ((float)(drySoundData[i + cachedHalfDelayInSamples]) * dryNormalized);
+        sample = sample + ((float)(drySoundData[i + cachedHalfDepthInSamples]) * dryNormalized);
     }
 
     delete[] drySoundData;
@@ -130,20 +132,93 @@ void ChorusAudioEffect::DisplayEffectWindow()
 
     ImGui::Begin(windowTitle); 
 
-    ImGui::SliderFloat("SampleRate [%]", &lfoSampleRate, 1, 10);
-    ImGui::SliderFloat("Depth [ms]", &delay, 1, 30);
-    //ImGui::SliderFloat("Depth [ms]", &depth, 1, 4);
+    { // BUTTONS
+        ImGui::BeginDisabled(type == ModulatedDelayType::none);
+        if (ImGui::Button("None")) {
+            type = ModulatedDelayType::none;
 
-    // Use ImGuiSliderFlags_NoInput flag to disable CTRL+Click here.
-    //ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, elementName); 
+            if (delay < 1) delay = 1;
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(type == ModulatedDelayType::flanger);
+        if ( ImGui::Button("Flanger")) {
+            type = ModulatedDelayType::flanger;
+            waveform = Waveform::triangle;
+
+            if (depth < 2) delay = 2;
+            else if (depth > 7) depth = 7;
+
+            delay = 1;
+            wet = 70;
+            dry = 70;
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(type == ModulatedDelayType::vibrato);
+        if ( ImGui::Button("Vibrato")) {
+            type = ModulatedDelayType::vibrato;
+            waveform = Waveform::sine;
+
+            if (depth < 3) delay = 3;
+            else if (depth > 7) depth = 7;
+
+            delay = 0;
+            wet = 100;
+            dry = 0;
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(type == ModulatedDelayType::chorus);
+        if (ImGui::Button("Chorus")) {
+            type = ModulatedDelayType::chorus;
+            waveform = Waveform::triangle;
+
+            if (delay < 1) delay = 1;
+
+            wet = 80;
+            dry = 100;
+        }
+        ImGui::EndDisabled();
+    }
+    
+
+
+    ImGui::SliderFloat("SampleRate [-]", &lfoSampleRate, 1, 10);
+
+    switch (type) {
+        case ModulatedDelayType::flanger: {
+            ImGui::SliderFloat("Depth [ms]", &depth, 2, 7);
+        } break;
+        case ModulatedDelayType::vibrato: {
+            ImGui::SliderFloat("Depth [ms]", &depth, 3, 7);
+        } break;
+        default:
+            ImGui::SliderFloat("Depth [ms]", &depth, 1, 30);
+            ImGui::SliderFloat("Delay [ms]", &delay, 1, 30);
+    }
+    
 
     //ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
+    //ImGui::SliderInt("Iterations [-]", &iterations, 0, 100);
+
+    // Use ImGuiSliderFlags_NoInput flag to disable CTRL+Click here.
+    if (type == ModulatedDelayType::none) {
+        ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, elementName);
+    }
 
     
-    //ImGui::SliderFloat("Frequency [%]", &lfoFrequency, 1, 1000);
 
-    //ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
-    //ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
+    if (type == ModulatedDelayType::none) {
+        ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
+        ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
+    }
 
     ImGui::End();
 }

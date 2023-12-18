@@ -3,16 +3,18 @@
 #include "AudioEffect.h"
 
 enum ModulatedDelayType : uint8_t {
-	flanger = 0,
-	vibrato = 1,
-	chorus = 2,
-	whiteChorus = 3
+	none = 0,
+	flanger = 1,
+	vibrato = 2,
+	chorus = 3,
+	whiteChorus = 4
 };
 
 class ChorusAudioEffect : public AudioEffect {
 
 private:
 
+	ModulatedDelayType type = ModulatedDelayType::chorus;
 	LFO lfo;
 
 	// lfo
@@ -22,13 +24,15 @@ private:
 	float lfoFrequency = 0.98f;	// (under 20 Hz). Many chorus units have an LFO frequency range between 0.1 Hz and 6 Hz
 
 	// Interface Parameters
-	float delay = 7;
-	//float depth = 2;
+	float depth = 14;
+	float delay = 1;
 	//int sampleRate = 0;
 	int waveform = Waveform::triangle; // fixed for chorus same as mixxer values!
-	float feedback = 0;
+	//float feedback = 0;
+	//float feedback_iterations = 0;
 
 	size cachedDrySoundSize = 0;
+	uint16_t cachedHalfDepthInSamples = 0;
 	uint16_t cachedHalfDelayInSamples = 0;
 
 public:
@@ -39,7 +43,7 @@ public:
 
 	void DisplayEffectWindow() override;
 
-	ChorusAudioEffect() : AudioEffect(80, 100) {};
+	ChorusAudioEffect() : AudioEffect(70, 100) {};
 	
 };
 
