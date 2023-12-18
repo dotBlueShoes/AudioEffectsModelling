@@ -10,8 +10,8 @@ void ChorusAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSound
 
 void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& wetSound) {
 
-    const auto&& lfoSampleRate = 10.0f;
-    const auto&& lfoFrequency = 1.0f;       // We want very high frequency. 
+    //const auto&& lfoSampleRate = 100.0f;
+    //const auto&& lfoFrequency = 10.0f;       // We want very high frequency. 
     const auto&& dryNormalized = Math::NormalizePercent(dry);
     const auto&& wetNormalized = Math::NormalizePercent(wet);
 
@@ -29,7 +29,7 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     //    spdlog::info("q: {:1.5}, j: {:1.5}", result.quadPhase, result.quadPhaseInverted);
     //}
 
-    spdlog::info("modDepth: {}", cachedHalfDepthInSamples);
+    //spdlog::info("modDepth: {}", cachedHalfDepthInSamples);
 
     // Create a copy of buffor with space before and after the original sound.
     int16_t* drySoundData = new int16_t[cachedDrySoundSize + (cachedHalfDepthInSamples * 2)];
@@ -40,6 +40,10 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     // spowolnienie/przyœpieszenie dzwiêku to zmiana pitchu
     // ¿eby przyœpieszyæ dzwiêk omijamy co któryœ orginalny sample
     // ¿aby spowolniæ dzwiêk dok³adamy ten sam sample
+
+    // jeœli najpierw bêdê na 2015 wezmê 2023
+    // a potem bêdê na 2016 i wezmê 2018
+    // to znów mamy ten sam efekt! A nie o to chodzi!
 
     { // Apply wet layer
 
@@ -54,7 +58,7 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
 
             if (currentLFO > 0) {
                 // It's faster so take sample from the future.
-                size&& wetSampleI = i + cachedHalfDepthInSamples + (int16_t)(cachedHalfDepthInSamples * currentLFO);
+                size&& wetSampleI = drySampleI + (int16_t)(cachedHalfDepthInSamples * currentLFO);
                 auto&& wetSample = drySoundData[wetSampleI];
                 resultSample = wetSample * wetNormalized;
 
@@ -122,6 +126,9 @@ void ChorusAudioEffect::DisplayEffectWindow()
     ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, elementName); 
 
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
+
+    ImGui::SliderFloat("SampleRate [%]", &lfoSampleRate, 1, 1000);
+    ImGui::SliderFloat("Frequency [%]", &lfoFrequency, 1, 1000);
 
     ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
     ImGui::SliderFloat("Dry [%]", &dry, 0, 100);

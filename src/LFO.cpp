@@ -20,7 +20,7 @@ void LFO::Initialize(const Waveform& newWaveform, const double& newFrequency) {
 	frequency = newFrequency;
 	waveform = newWaveform;
 
-	spdlog::info("a: {}, b: {}", moduloCounter, phaseIncremental);
+	//spdlog::info("a: {}, b: {}", moduloCounter, phaseIncremental);
 }
 
 

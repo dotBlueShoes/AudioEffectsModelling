@@ -18,10 +18,12 @@ private:
 	// lfo
 	//double lfoRate = 10.0f;//0.0f;
 	//double lfoDepth = 2.0f;
+	float lfoSampleRate = 100.0f;
+	float lfoFrequency = 10.0f;
 
 	// Interface Parameters
 	float minDelay = 10;
-	float modDepth = 1;
+	float modDepth = 10;
 	//int sampleRate = 0;
 	int waveform = Waveform::sine;
 	float feedback = 0;
