@@ -65,8 +65,6 @@ void DistortionAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::
 
     delete[] drySoundData;
 
-    //spdlog::info("maxVal : {}", maxVal);
-    //spdlog::info("minVal : {}", minVal);
 
     // Compute normalization factor
     //float normalizationFactor = std::max(std::abs(maxVal), std::abs(minVal));
@@ -80,42 +78,8 @@ void DistortionAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::
     //        sound.pcmData[i] = static_cast<int16_t>(sample * maxInt16); // Scale back to int16_t range
     //        sound.pcmData[i] *= wetNormalized;
     //        //spdlog::info("sample : {}", sound.pcmData[i]);
-//
     //    }
     //}
-
-    //spdlog::info("maxVal : {}", maxVal);
-    //spdlog::info("minVal : {}", minVal);
-   // spdlog::info("normalizationFactor : {}", normalizationFactor);
-
-
-   /* if (type == 0)
-    {
-        wetSound = gain * ((drySound * 3.0f) / 2.0f) * (1.0f - ((drySound * drySound) / 3.0f));
-    }
-    else if (type == 1)
-    {
-        wetSound = gain * (tanh(drySound * kParameter) / tanh(drySound));
-    }*/
-
-    /*
-    for (size i = 0; i < cachedDrySoundSize; ++i) {
-        if (type == 0)
-        {
-           // spdlog::info("type 0 data index : {}", i);
-           // spdlog::info("type 0 raw data : {}", sound.pcmData[i]);
-            sound.pcmData[i] = gain * ((sound.pcmData[i] * 3.0f) / 2.0f); //* (1.0f - ((sound.pcmData[i] * sound.pcmData[i]) / 3.0f)); 
-            //sound.pcmData[i] = sound.pcmData[i];
-
-           // spdlog::info("type 0 wet data : {}", sound.pcmData[i]);
-        }
-        else if (type == 1)
-        {
-            //spdlog::info("type 1 data : {}", sound.pcmData[i]);
-            sound.pcmData[i] = gain * (tanh(sound.pcmData[i] * kParameter));
-        }
-    }
-    */
 
 }
 
