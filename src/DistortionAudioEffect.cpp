@@ -26,6 +26,7 @@ void DistortionAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::
     for (size i = 0; i < cachedDrySoundSize; ++i) {
         // Convert to float and scale to range [-1.0, 1.0]
         float sample = sound.pcmData[i] / maxInt16;
+ 
 
         if (type == 0) {
             // Simple clipping distortion
@@ -41,7 +42,6 @@ void DistortionAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::
             // Weirder distortion
             sample = gain * (tanh(sample * kParameter));
             sample = std::max(-1.0f, std::min(sample, 1.0f)); // Clipping to [-1, 1]
-            //spdlog::info("sample : {}", sample);
         }
         // Store the processed sample back, scaling it to the original int16_t range
         sound.pcmData[i] = static_cast<int16_t>(std::max(-maxInt16, std::min(sample * maxInt16, maxInt16)));
@@ -55,32 +55,22 @@ void DistortionAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::
 
     // Compute normalization factor
     float normalizationFactor = std::max(std::abs(maxVal), std::abs(minVal));
-    spdlog::info("normalizationFactor : {}", normalizationFactor);
-    int maxx = 0;
-    int minx = 0;
+    //spdlog::info("normalizationFactor : {}", normalizationFactor);
+
     // Second pass: Normalize and scale back to int16_t
     if (normalizationFactor > 0.0f) {
         for (size i = 0; i < cachedDrySoundSize; ++i) {
             float sample = sound.pcmData[i] / maxInt16; // Scale to [-1.0, 1.0] range
-            sample = sample / normalizationFactor; // Normalize
+            sample = (sample*dryNormalized) / normalizationFactor; // Normalize
             sound.pcmData[i] = static_cast<int16_t>(sample * maxInt16); // Scale back to int16_t range
-            if (sound.pcmData[i] > maxx)
-            {
-                maxx = sound.pcmData[i];
-            }
-            else if(sound.pcmData[i]< minx)
-            {
-                minx = sound.pcmData[i];
-            }
+            sound.pcmData[i] *= wetNormalized;
             //spdlog::info("sample : {}", sound.pcmData[i]);
 
         }
     }
 
-     spdlog::info("maxVal : {}", maxx);
-     spdlog::info("minVal : {}", minx);
-    spdlog::info("maxVal : {}", maxVal);
-    spdlog::info("minVal : {}", minVal);
+    //spdlog::info("maxVal : {}", maxVal);
+    //spdlog::info("minVal : {}", minVal);
    // spdlog::info("normalizationFactor : {}", normalizationFactor);
 
 
