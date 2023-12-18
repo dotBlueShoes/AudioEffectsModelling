@@ -37,12 +37,19 @@ void ReverbAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
             //spdlog::info("out sample : {}", wetSample);
         }   
         wetSample /= combFilters.size(); // Normalize the combined output
+        wetSample *= wetNormalized;
         wetSample = std::max(-1.0f, std::min(wetSample, 1.0f)); // Clipping to [-1, 1]
         sound.pcmData[i] = static_cast<int16_t>(wetSample * maxInt16);
-        
     }
 
 
+    // Apply dry layer.
+    for (size i = 0; i < cachedDrySoundSize; ++i) {
+        auto&& sample = sound.pcmData[i];
+        sample = sample + ((float)(drySoundData[i]) * dryNormalized);
+    }
+
+    delete[] drySoundData;
 
    /*// The maximum value for scaling from int16_t to float range [-1.0, 1.0]
     constexpr float maxInt16 = static_cast<float>(std::numeric_limits<int16_t>::max());
