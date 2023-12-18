@@ -78,8 +78,8 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
             resultSample = drySoundData[(size)currentIndex] * wetNormalized;
         }
 
-        spdlog::info("i: {}", currentIndex);
-        spdlog::info("j: {}", j);
+        //spdlog::info("i: {}", currentIndex);
+        //spdlog::info("j: {}", j);
 
         //for (size i = 0; i < cachedDrySoundSize; ++i) {
         //    auto&& currentLFO = lfo.RenderAudio().normal;
