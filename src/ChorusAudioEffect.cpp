@@ -51,7 +51,7 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         std::memset(wetSound.pcmData, 0, cachedHalfDepthInSamples * 2 /* int16 */);
 
         double currentIndex = cachedHalfDepthInSamples;
-        for (size i = 0; i < cachedDrySoundSize; ++i) {
+        for (size i = 0; currentIndex < cachedDrySoundSize; ++i) {
             auto&& currentLFO = lfo.RenderAudio().normal + 1;
             auto&& drySampleI = i + cachedHalfDepthInSamples;
             auto&& resultSample = wetSound.pcmData[drySampleI];
@@ -113,20 +113,20 @@ void ChorusAudioEffect::DisplayEffectWindow()
 
     ImGui::Begin(windowTitle); 
 
+    ImGui::SliderFloat("SampleRate [%]", &lfoSampleRate, 1, 10);
     ImGui::SliderFloat("Delay [ms]", &minDelay, 0, 30);
     ImGui::SliderFloat("Depth [ms]", &modDepth, 1, 30);
-    //ImGui::SliderInt("SampleRate [Hz]", &sampleRate, 0, 1000);
 
     // Use ImGuiSliderFlags_NoInput flag to disable CTRL+Click here.
-    ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, elementName); 
+    //ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, elementName); 
 
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
 
-    ImGui::SliderFloat("SampleRate [%]", &lfoSampleRate, 1, 1000);
-    ImGui::SliderFloat("Frequency [%]", &lfoFrequency, 1, 1000);
+    
+    //ImGui::SliderFloat("Frequency [%]", &lfoFrequency, 1, 1000);
 
-    ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
-    ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
+    //ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
+    //ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
 
     ImGui::End();
 }

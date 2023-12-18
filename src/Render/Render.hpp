@@ -128,27 +128,18 @@ namespace Controls {
                 auto result = std::to_chars(controlName.data() + reserved_chars, controlName.data() + controlName.size(), i + 1, 10);
                 *(result.ptr) = '\0';
 
-                ImGui::Text(controlName.data());
-
-                ImGui::SameLine();
-
                 ImGui::PushID(i);
 
                 if (ImGui::Button("Select")) {
-
-                    // Stop currently playing sound on source.
-                    spdlog::info("OpenGL: PLAYING - StopSound");
-                    //OpenAL::StopSound(currentSource);
-
-                    // Instead send that information to the play func so we aplly effects and create a new sound ...
-                    //alSourcei(currentSource, AL_BUFFER, drawCallParams.sounds[i]);
-                    //OpenAL::CheckError("7");
-
+                    spdlog::info("OpenGL: PLAYING - SelectSound");
                     selectedOriginalSoundIndex = i;
-
                 }
 
                 ImGui::PopID();
+
+                ImGui::SameLine();
+
+                ImGui::Text(controlName.data());
 
             }
 

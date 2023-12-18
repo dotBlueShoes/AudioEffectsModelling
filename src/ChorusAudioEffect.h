@@ -25,7 +25,7 @@ private:
 	float minDelay = 10;
 	float modDepth = 10;
 	//int sampleRate = 0;
-	int waveform = Waveform::sine;
+	int waveform = Waveform::triangle; // fixed for chorus same as mixxer values!
 	float feedback = 0;
 
 	size cachedDrySoundSize = 0;
