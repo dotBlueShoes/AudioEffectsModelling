@@ -1,27 +1,104 @@
 #include "ChorusAudioEffect.h"
 
 void ChorusAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
-    wetSoundSize = drySoundSize + Math::MilisecondsToSample(modDepth, 44100);
+    cachedHalfDepthInSamples = Math::MilisecondsToSample(modDepth, 44100);
+
+    cachedDrySoundSize = drySoundSize;
+    wetSoundSize = drySoundSize + cachedHalfDepthInSamples;
+    cachedHalfDepthInSamples /= 2;
 }
 
-void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) {
+void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& wetSound) {
+
+    const auto&& lfoSampleRate = 10.0f;
+    const auto&& lfoFrequency = 1.0f;       // We want very high frequency. 
+    const auto&& dryNormalized = Math::NormalizePercent(dry);
+    const auto&& wetNormalized = Math::NormalizePercent(wet);
 
     // 1. Reset
-    lfo.Reset(44100);
+    lfo.Reset(lfoSampleRate);
 
     // 2-3. Set params
-    lfo.Initialize((Waveform)waveform, lfoRate);
+    lfo.Initialize((Waveform)waveform, lfoFrequency);
 
     // 4. Call processAudioSample pass input value in and receiving the output value as the return variable.
 
-    for (size i = 0; i < 20; ++i) {
-        LFOResult result = lfo.RenderAudio();
+    //for (size i = 0; i < 20; ++i) {
+    //    LFOResult result = lfo.RenderAudio();
+    //    spdlog::info("n: {:1.5}, i: {:1.5}", result.normal, result.inverted);
+    //    spdlog::info("q: {:1.5}, j: {:1.5}", result.quadPhase, result.quadPhaseInverted);
+    //}
 
-        spdlog::info("a: {:1.10f}", result.normal);
-        spdlog::info("b: {:1.10f}", result.inverted);
-        spdlog::info("c: {:1.10f}", result.quadPhase);
-        spdlog::info("d: {:1.10f}", result.quadPhaseInverted);
+    spdlog::info("modDepth: {}", cachedHalfDepthInSamples);
+
+    // Create a copy of buffor with space before and after the original sound.
+    int16_t* drySoundData = new int16_t[cachedDrySoundSize + (cachedHalfDepthInSamples * 2)];
+    std::memset(drySoundData, 0, cachedHalfDepthInSamples * 2 /* int16 */);
+    std::memcpy(drySoundData + cachedHalfDepthInSamples, wetSound.pcmData, cachedDrySoundSize * 2 /* int16 */);
+    std::memset(drySoundData + cachedDrySoundSize + cachedHalfDepthInSamples, 0, cachedHalfDepthInSamples * 2 /* int16 */);
+
+    // spowolnienie/przyœpieszenie dzwiêku to zmiana pitchu
+    // ¿eby przyœpieszyæ dzwiêk omijamy co któryœ orginalny sample
+    // ¿aby spowolniæ dzwiêk dok³adamy ten sam sample
+
+    { // Apply wet layer
+
+        // 0'ed sound for delayInSamples value.
+        std::memset(wetSound.pcmData, 0, cachedHalfDepthInSamples * 2 /* int16 */);
+
+        for (size i = 0; i < cachedDrySoundSize; ++i) {
+            auto&& currentLFO = lfo.RenderAudio().normal;
+            auto&& drySampleI = i + cachedHalfDepthInSamples;
+            auto&& previousSample = wetSound.pcmData[drySampleI - 1];
+            auto&& resultSample = wetSound.pcmData[drySampleI];
+
+            if (currentLFO > 0) {
+                // It's faster so take sample from the future.
+                size&& wetSampleI = i + cachedHalfDepthInSamples + (int16_t)(cachedHalfDepthInSamples * currentLFO);
+                auto&& wetSample = drySoundData[wetSampleI];
+                resultSample = wetSample * wetNormalized;
+
+                //spdlog::info("o: {}, s: {}", drySampleI, wetSampleI);
+            } else {
+                // It's slower so take sample from the past.
+                auto&& wetSample = previousSample;
+                resultSample = wetSample * wetNormalized;
+            }
+            
+
+            
+            //int16_t wetSample;
+
+            //if (wetSampleI > drySampleI) { 
+            //    spdlog::info("{}, {}", wetSampleI, drySampleI);
+            //    wetSample = wetSound.pcmData[wetSampleI];
+            //} else {
+            //    wetSample = 0;
+            //}
+
+            
+
+            //resultSample = wetSample * wetNormalized;
+        }
+
+        // It's wrong! It's not about sample position but about sample pitch!
+        //for (size i = 0; i < cachedDrySoundSize; ++i) {
+        //    auto&& sample = wetSound.pcmData[i + cachedHalfDepthInSamples];
+        //    size selectedSample = i + cachedHalfDepthInSamples + (int16_t)(cachedHalfDepthInSamples * lfo.RenderAudio().normal);
+        //    spdlog::info("o: {}, s: {}", i + cachedHalfDepthInSamples, selectedSample);
+        //    auto&& wetSample = wetSound.pcmData[selectedSample];
+        //    sample = wetSample * wetNormalized;
+        //}
     }
+
+    // Apply dry layer.
+    for (size i = 0; i < cachedDrySoundSize; ++i) {
+        auto&& sample = wetSound.pcmData[i];
+        sample = sample + ((float)(drySoundData[i + cachedHalfDepthInSamples]) * dryNormalized);
+    }
+
+    delete[] drySoundData;
+
 }
 
 void ChorusAudioEffect::DisplayEffectWindow()

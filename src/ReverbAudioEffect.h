@@ -15,7 +15,7 @@ public:
 
 	void applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) override;
 
-	ReverbAudioEffect() : AudioEffect() {};
+	ReverbAudioEffect() : AudioEffect(50, 50) {};
 	void DisplayEffectWindow() override;
 };
 

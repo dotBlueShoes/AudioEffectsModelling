@@ -17,7 +17,7 @@ public:
 
 	void applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) override;
 
-	DelayAudioEffect() : AudioEffect(), feedback(50.0f),  delay(400), iterations(1) {};
+	DelayAudioEffect() : AudioEffect(100, 0), feedback(50.0f),  delay(400), iterations(1) {};
 	void DisplayEffectWindow() override;
 };
 

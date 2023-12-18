@@ -14,10 +14,11 @@ void DelayAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundS
 
 void DelayAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& wetSound) {
 
+    const auto&& feedbackNormalized = Math::NormalizePercent(feedback);
+    const auto&& dryNormalized = Math::NormalizePercent(dry);
+    const auto&& wetNormalized = Math::NormalizePercent(wet);
+
     auto&& delayInSamples = cachedDelayInSamples;
-    auto&& feedbackNormalized = Math::NormalizePercent(feedback);
-    auto&& dryNormalized = Math::NormalizePercent(dry);
-    auto&& wetNormalized = Math::NormalizePercent(wet);
 
     // Create a copy of yet unmodified data buffor.
     int16_t* drySoundData = new int16_t[cachedDrySoundSize];
@@ -50,7 +51,6 @@ void DelayAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadW
     for (size i = 0; i < cachedDrySoundSize; ++i) {
         auto&& sample = wetSound.pcmData[i];
         sample = sample + ((float)(drySoundData[i]) * dryNormalized);
-
     }
 
     delete[] drySoundData;

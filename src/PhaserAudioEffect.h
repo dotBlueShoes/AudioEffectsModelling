@@ -17,7 +17,7 @@ public:
 
 	void applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) override;
 
-	PhaserAudioEffect() : AudioEffect(){};
+	PhaserAudioEffect() : AudioEffect(50, 50) {};
 	void DisplayEffectWindow() override;
 };
 
