@@ -235,16 +235,20 @@ namespace OpenAL {
     auto StopSound(const ALuint& source) {
         alSourceStop(source);
 
-        // unbing source buffors 
-        alSourcei(source, AL_BUFFER, NULL);
+        
 
-        DestorySound(Effects::soundFinal);
+        
     }
 
-    auto PlaySound(const ALuint& source, const SoundIO::ReadWavData& originalSound, ALint& sourceState) {
+    auto PlaySound(const ALuint& source, const float& dryGain, const SoundIO::ReadWavData& originalSound, ALint& sourceState) {
 
         auto&& originalSoundSize = originalSound.pcmSize;
         auto&& originalSoundData = originalSound.pcmData;
+
+        // that is very wrong. // Apply initial gain.
+        //for (size i = 0; i < originalSoundSize; ++i) {
+        //    originalSoundData[i] *= dryGain;
+        //}
 
         size finalWetSoundSize = originalSoundSize;
 
@@ -279,8 +283,6 @@ namespace OpenAL {
 
         //spdlog::info("a: {}", finalWetSoundSize - originalSoundSize);
 
-        
-
 
         // Create a copy of the original sound. with new pcm data.
         OpenAL::Effects::soundDataFinal = SoundIO::ReadWavData { 
@@ -295,6 +297,11 @@ namespace OpenAL {
         for (auto&& effect : Effects::effectsQueue) {
             effect->applyEffect(originalSoundSize, OpenAL::Effects::soundDataFinal);
         }
+
+
+        // unbing source buffors 
+        alSourcei(source, AL_BUFFER, NULL);
+        DestorySound(Effects::soundFinal);
 
 
         // Create buffor and load data into it for newly created sound.

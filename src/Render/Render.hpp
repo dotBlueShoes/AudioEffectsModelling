@@ -181,7 +181,7 @@ namespace Controls {
                 case AL_INITIAL: {
                     if (ImGui::Button("Play")) {
                         spdlog::info("OpenGL: INITIAL - PlaySound");
-                        OpenAL::PlaySound(currentSource, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
+                        OpenAL::PlaySound(currentSource, drawCallParams.gain, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
                     }
                 } break;
 
@@ -189,7 +189,7 @@ namespace Controls {
                     if (ImGui::Button("Play")) {
                         spdlog::info("OpenGL: PLAYING - PlaySound");
                         OpenAL::StopSound(currentSource);
-                        OpenAL::PlaySound(currentSource, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
+                        OpenAL::PlaySound(currentSource, drawCallParams.gain, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
                     }
                 } break;
 
@@ -203,7 +203,7 @@ namespace Controls {
                 case AL_PAUSED: {
                     if (ImGui::Button("Resume")) {
                         spdlog::info("OpenGL: PAUSED - PlaySound");
-                        OpenAL::PlaySound(currentSource, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
+                        OpenAL::PlaySound(currentSource, drawCallParams.gain, drawCallParams.soundsData[selectedOriginalSoundIndex], drawCallParams.sourceState);
                     }
                 } break;
 
@@ -228,17 +228,23 @@ namespace Controls {
 
             static ALfloat temp = 1.0;
 
-            ImGui::Text("Dry");
+            //ImGui::Text("Dry");
+            //
+            //{
+            //    ImGui::SliderFloat("Gain##IN", &drawCallParams.gain, 0, OpenAL::MAX_GAIN);
+            //}
+
+            ImGui::Text("Wet");
 
             {
                 alGetSourcef(currentSource, AL_GAIN, &temp);
-                if (ImGui::SliderFloat("Gain##IN", &temp, 0, OpenAL::MAX_GAIN)) {
+                if (ImGui::SliderFloat("Gain##OUT", &temp, 0, OpenAL::MAX_GAIN)) {
                     alSourcef(currentSource, AL_GAIN, temp);
                     OpenAL::CheckError("Gain");
                 }
 
                 alGetSourcef(currentSource, AL_PITCH, &temp);
-                if (ImGui::SliderFloat("Pitch##IN", &temp, 0, 10)) {
+                if (ImGui::SliderFloat("Pitch##OUT", &temp, 0, 10)) {
                     alSourcef(currentSource, AL_PITCH, temp);
                     OpenAL::CheckError("Pitch");
                 }

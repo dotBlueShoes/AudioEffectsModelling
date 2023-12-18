@@ -38,7 +38,7 @@ int main(int argumentsCount, char** arguments) {
     OpenAL::CreateListener3D();
     
 
-    const float pitch = 1.0f, gain = 1.0f;
+    const float dryPitch = 1.0f, dryGain = 1.0f;
 
 
     //{ // Display Sound Buffor data.
@@ -82,8 +82,8 @@ int main(int argumentsCount, char** arguments) {
 
 
     // Load a sound source for mono.
-    mainSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, pitch, gain);
-    changeSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, pitch, gain);
+    mainSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, dryPitch, dryGain);
+    changeSourceBuffer = OpenAL::CreateMonoSource(initialSound, false, dryPitch, dryGain);
 
     ALint sourceState = NULL;
 
@@ -95,8 +95,8 @@ int main(int argumentsCount, char** arguments) {
         monoSounds.data(),
         monoSources.data(),
         sourceState,
-        pitch,
-        gain
+        dryPitch,
+        dryGain
     };
 
 
