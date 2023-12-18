@@ -14,6 +14,8 @@ private:
 	float decay;
 	int sampleRate;
 
+	size cachedDrySoundSize = 0;
+	size cachedWetSoundSize = 0;
 public:
 	
 	void getWetSoundSize(const size& drySoundSize, size& wetSoundSize) override;

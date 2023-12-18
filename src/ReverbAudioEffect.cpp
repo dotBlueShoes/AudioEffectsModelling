@@ -4,7 +4,9 @@ void ReverbAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSound
     // Determine the wet sound size based on the maximum delay
     int maxDelay = std::max({ delay1, delay2, delay3, delay4 });
     int delaySamples = Math::MilisecondsToSample(maxDelay, sampleRate);
-    wetSoundSize = drySoundSize + delaySamples;
+    cachedDrySoundSize = drySoundSize;
+    cachedWetSoundSize = drySoundSize + delaySamples;
+    wetSoundSize = cachedWetSoundSize;
 }
 
 void ReverbAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) {
@@ -20,7 +22,7 @@ void ReverbAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     int delaySamples3 = Math::MilisecondsToSample(delay3, sampleRate);
     int delaySamples4 = Math::MilisecondsToSample(delay4, sampleRate);
 
-    for (size i = 0; i < originalSoundSize; ++i) {
+    for (size i = 0; i < cachedWetSoundSize; ++i) {
         float wetSample = sound.pcmData[i] / maxInt16;
         if (i >= delaySamples1) wetSample += sound.pcmData[i - delaySamples1] / maxInt16 * decay * wetNormalized;
         if (i >= delaySamples2) wetSample += sound.pcmData[i - delaySamples2] / maxInt16 * decay * wetNormalized;
