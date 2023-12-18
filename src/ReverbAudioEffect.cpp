@@ -1,5 +1,8 @@
 #include "ReverbAudioEffect.h"
 
+
+
+
 void ReverbAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
     // Determine the wet sound size based on the maximum delay
     int maxDelay = std::max({ delay1, delay2, delay3, delay4 });
@@ -11,7 +14,40 @@ void ReverbAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSound
 
 void ReverbAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) {
 
-    // The maximum value for scaling from int16_t to float range [-1.0, 1.0]
+    const auto&& dryNormalized = Math::NormalizePercent(dry);
+    const auto&& wetNormalized = Math::NormalizePercent(wet);
+
+    int16_t* drySoundData = new int16_t[cachedDrySoundSize];
+    std::memcpy(drySoundData, sound.pcmData, cachedDrySoundSize * 2 /* int16 */);
+
+    combFilters.clear();
+    combFilters.push_back(CombFilter(Math::MilisecondsToSample(delay1, sampleRate), RT60, sampleRate));
+    combFilters.push_back(CombFilter(Math::MilisecondsToSample(delay2, sampleRate), RT60, sampleRate));
+    combFilters.push_back(CombFilter(Math::MilisecondsToSample(delay3, sampleRate), RT60, sampleRate));
+    combFilters.push_back(CombFilter(Math::MilisecondsToSample(delay4, sampleRate), RT60, sampleRate));
+    constexpr float maxInt16 = static_cast<float>(std::numeric_limits<int16_t>::max());
+
+    for (size i = 0; i < cachedWetSoundSize; ++i) {
+        float inputSample = sound.pcmData[i] / maxInt16;
+        float wetSample = 0.0f;
+
+        // Process the sample through each comb filter
+        for (auto& filter : combFilters) {
+            wetSample += filter.process(inputSample);
+        }
+        wetSample*=wetNormalized;
+        wetSample = std::max(-1.0f, std::min(wetSample, 1.0f)); // Clipping to [-1, 1]
+        sound.pcmData[i] = static_cast<int16_t>(wetSample * maxInt16);
+    }
+
+    // Apply dry layer.
+    for (size i = 0; i < cachedDrySoundSize; ++i) {
+        auto&& sample = sound.pcmData[i];
+        sample = sample + ((float)(drySoundData[i]) * dryNormalized);
+    }
+
+
+   /*// The maximum value for scaling from int16_t to float range [-1.0, 1.0]
     constexpr float maxInt16 = static_cast<float>(std::numeric_limits<int16_t>::max());
 
     const auto&& dryNormalized = Math::NormalizePercent(dry);
@@ -33,7 +69,7 @@ void ReverbAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         wetSample = std::max(-1.0f, std::min(wetSample, 1.0f)); // Clipping to [-1, 1]
         sound.pcmData[i] = static_cast<int16_t>(wetSample * maxInt16);
 
-    }
+    }*/
 }
 
 
