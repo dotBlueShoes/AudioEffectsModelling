@@ -25,4 +25,9 @@ namespace Math {
 		return percent / 100;
 	}
 
+	//template<class T>
+	double Remap(const double& value, const double& oldRangeMin, const double& oldRangeMax, const double& newRangeMin, const double& newRangeMax) {
+		return ((value - oldRangeMin) / (oldRangeMax - oldRangeMin)) * (newRangeMax - newRangeMin) + newRangeMin;
+	}
+
 }

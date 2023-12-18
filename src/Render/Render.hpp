@@ -119,20 +119,52 @@ namespace Controls {
             const array<char, 11> controlBase { "Sample XYZ" };
             const int32_t reserved_chars = 7;
 
-            ImGui::Text("Nylon Strings");
+            ImGui::Text("Steel Strings");
 
-            for (size i = 0; i < drawCallParams.soundsCount; ++i) {
+            for (size i = 0; i < 6/*drawCallParams.soundsCount*/; ++i) {
 
                 // Format Control Name
                 array<char, 11> controlName = controlBase;
                 auto result = std::to_chars(controlName.data() + reserved_chars, controlName.data() + controlName.size(), i + 1, 10);
                 *(result.ptr) = '\0';
 
+                if (i != 0) ImGui::SameLine();
+
                 ImGui::PushID(i);
 
                 if (ImGui::Button("Select")) {
                     spdlog::info("OpenGL: PLAYING - SelectSound");
                     selectedOriginalSoundIndex = i;
+                }
+
+                ImGui::PopID();
+
+                ImGui::SameLine();
+
+                ImGui::Text(controlName.data());
+
+            }
+
+
+            ImGui::Text("Guitar Samples");
+            
+
+            for (size i = 0; i < 5; ++i) {
+
+                auto&& samplesIndex = i + 6;
+
+                // Format Control Name
+                array<char, 11> controlName = controlBase;
+                auto result = std::to_chars(controlName.data() + reserved_chars, controlName.data() + controlName.size(), i + 1, 10);
+                *(result.ptr) = '\0';
+
+                if (i != 0) ImGui::SameLine();
+
+                ImGui::PushID(samplesIndex);
+
+                if (ImGui::Button("Select")) {
+                    spdlog::info("OpenGL: PLAYING - SelectSound");
+                    selectedOriginalSoundIndex = samplesIndex;
                 }
 
                 ImGui::PopID();

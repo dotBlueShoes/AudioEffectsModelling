@@ -43,14 +43,25 @@ namespace SOUNDS {
 	const char ELECTRIC_5A2[] = RES_SOUNDS RES_ELECTRIC "5_a2.wav";
 	const char ELECTRIC_6E2[] = RES_SOUNDS RES_ELECTRIC "6_e2.wav";
 
+	const char SAMPLE_1[] = RES_SOUNDS RES_SAMPLES "chord_guitar.wav";
+	const char SAMPLE_2[] = RES_SOUNDS RES_SAMPLES "intro_guitar.wav";
+	const char SAMPLE_3[] = RES_SOUNDS RES_SAMPLES "jazz_guitar.wav";
+	const char SAMPLE_4[] = RES_SOUNDS RES_SAMPLES "solo_guitar.wav";
+	const char SAMPLE_5[] = RES_SOUNDS RES_SAMPLES "up_guitar.wav";
 
-	const array<const char*, 6> SOUND_FILES {
+
+	const array<const char*, 6 + 5> SOUND_FILES {
 		ELECTRIC_6E2,
 		ELECTRIC_5A2,
 		ELECTRIC_4D3,
 		ELECTRIC_3G3,
 		ELECTRIC_2B3,
 		ELECTRIC_1E4,
+		SAMPLE_1,
+		SAMPLE_2,
+		SAMPLE_3,
+		SAMPLE_4,
+		SAMPLE_5,
 	};
 
 }

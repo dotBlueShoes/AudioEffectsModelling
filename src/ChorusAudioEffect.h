@@ -19,17 +19,17 @@ private:
 	//double lfoRate = 10.0f;//0.0f;
 	//double lfoDepth = 2.0f;
 	float lfoSampleRate = 2.0f; // 1.0001 -> 10.0 ?
-	float lfoFrequency = 1.0f;
+	float lfoFrequency = 0.98f;	// (under 20 Hz). Many chorus units have an LFO frequency range between 0.1 Hz and 6 Hz
 
 	// Interface Parameters
-	float minDelay = 10;
-	float modDepth = 10;
+	float delay = 7;
+	//float depth = 2;
 	//int sampleRate = 0;
 	int waveform = Waveform::triangle; // fixed for chorus same as mixxer values!
 	float feedback = 0;
 
 	size cachedDrySoundSize = 0;
-	uint16_t cachedHalfDepthInSamples = 0;
+	uint16_t cachedHalfDelayInSamples = 0;
 
 public:
 
@@ -39,7 +39,7 @@ public:
 
 	void DisplayEffectWindow() override;
 
-	ChorusAudioEffect() : AudioEffect(50, 50) {};
+	ChorusAudioEffect() : AudioEffect(80, 100) {};
 	
 };
 
