@@ -16,7 +16,7 @@ private:
 	int sampleRate;
 
 	std::vector<CombFilter> combFilters;
-	float RT60 = 60; // Reverberation time
+	float RT60 = 1; // Reverberation time
 	//int sampleRate;
 
 
@@ -30,10 +30,10 @@ public:
 
 	ReverbAudioEffect() : AudioEffect(50, 50), sampleRate(44100), wet(50), decay(0.3) {
 		// Initialize delay buffers and indices
-		delay1 = 100; // Example delay times in milliseconds
-		delay2 = 200;
-		delay3 = 300;
-		delay4 = 400;
+		delay1 = 40; // Example delay times in milliseconds
+		delay2 = 50;
+		delay3 = 60;
+		delay4 = 70;
 	}
 	//ReverbAudioEffect(int sr, float rt60);
 	void DisplayEffectWindow() override;

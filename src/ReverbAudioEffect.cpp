@@ -34,17 +34,14 @@ void ReverbAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         // Process the sample through each comb filter
         for (auto& filter : combFilters) {
             wetSample += filter.process(inputSample);
-        }
-        wetSample*=wetNormalized;
+            //spdlog::info("out sample : {}", wetSample);
+        }   
+        wetSample /= combFilters.size(); // Normalize the combined output
         wetSample = std::max(-1.0f, std::min(wetSample, 1.0f)); // Clipping to [-1, 1]
         sound.pcmData[i] = static_cast<int16_t>(wetSample * maxInt16);
+        
     }
 
-    // Apply dry layer.
-    for (size i = 0; i < cachedDrySoundSize; ++i) {
-        auto&& sample = sound.pcmData[i];
-        sample = sample + ((float)(drySoundData[i]) * dryNormalized);
-    }
 
 
    /*// The maximum value for scaling from int16_t to float range [-1.0, 1.0]
@@ -82,12 +79,13 @@ void ReverbAudioEffect::DisplayEffectWindow()
 
     ImGui::Begin(windowTitle); 
 
-    ImGui::SliderInt("Delay 1 [-]", &delay1, 0, 4000);
-    ImGui::SliderInt("Delay 2 [-]", &delay2, 0, 4000);
-    ImGui::SliderInt("Delay 3 [-]", &delay3, 0, 4000);
-    ImGui::SliderInt("Delay 4 [-]", &delay4, 0, 4000);
+    ImGui::SliderInt("Delay 1 [-]", &delay1, 0, 500);
+    ImGui::SliderInt("Delay 2 [-]", &delay2, 0, 500);
+    ImGui::SliderInt("Delay 3 [-]", &delay3, 0, 500);
+    ImGui::SliderInt("Delay 4 [-]", &delay4, 0, 500);
 
-    ImGui::SliderFloat("Decay [-]", &decay, 0, 1);
+    ImGui::SliderFloat("Decay [-]", &RT60, 0, 5);
+    //ImGui::SliderFloat("Decay [-]", &decay, 0, 1);
 
     ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
     ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
