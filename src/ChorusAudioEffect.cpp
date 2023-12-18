@@ -50,40 +50,35 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         // 0'ed sound for delayInSamples value.
         std::memset(wetSound.pcmData, 0, cachedHalfDepthInSamples * 2 /* int16 */);
 
+        double currentIndex = cachedHalfDepthInSamples;
         for (size i = 0; i < cachedDrySoundSize; ++i) {
-            auto&& currentLFO = lfo.RenderAudio().normal;
+            auto&& currentLFO = lfo.RenderAudio().normal + 1;
             auto&& drySampleI = i + cachedHalfDepthInSamples;
-            auto&& previousSample = wetSound.pcmData[drySampleI - 1];
             auto&& resultSample = wetSound.pcmData[drySampleI];
 
-            if (currentLFO > 0) {
-                // It's faster so take sample from the future.
-                size&& wetSampleI = drySampleI + (int16_t)(cachedHalfDepthInSamples * currentLFO);
-                auto&& wetSample = drySoundData[wetSampleI];
-                resultSample = wetSample * wetNormalized;
+            currentIndex += currentLFO;
+            //spdlog::info("d: {}, w: {}", i + cachedHalfDepthInSamples, currentIndex);
 
-                //spdlog::info("o: {}, s: {}", drySampleI, wetSampleI);
-            } else {
-                // It's slower so take sample from the past.
-                auto&& wetSample = previousSample;
-                resultSample = wetSample * wetNormalized;
-            }
-            
-
-            
-            //int16_t wetSample;
-
-            //if (wetSampleI > drySampleI) { 
-            //    spdlog::info("{}, {}", wetSampleI, drySampleI);
-            //    wetSample = wetSound.pcmData[wetSampleI];
-            //} else {
-            //    wetSample = 0;
-            //}
-
-            
-
-            //resultSample = wetSample * wetNormalized;
+            resultSample = drySoundData[(size)currentIndex] * wetNormalized;
         }
+
+        //for (size i = 0; i < cachedDrySoundSize; ++i) {
+        //    auto&& currentLFO = lfo.RenderAudio().normal;
+        //    auto&& drySampleI = i + cachedHalfDepthInSamples;
+        //    auto&& previousSample = wetSound.pcmData[drySampleI - 1];
+        //    auto&& resultSample = wetSound.pcmData[drySampleI];
+        //
+        //    if (currentLFO > 0) {
+        //        // It's faster so take sample from the future.
+        //        size&& wetSampleI = drySampleI + (int16_t)(cachedHalfDepthInSamples * currentLFO);
+        //        auto&& wetSample = drySoundData[wetSampleI];
+        //        resultSample = wetSample * wetNormalized;
+        //    } else {
+        //        // It's slower so take sample from the past.
+        //        auto&& wetSample = previousSample;
+        //        resultSample = wetSample * wetNormalized;
+        //    }
+        //}
 
         // It's wrong! It's not about sample position but about sample pitch!
         //for (size i = 0; i < cachedDrySoundSize; ++i) {

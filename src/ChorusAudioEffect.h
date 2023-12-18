@@ -18,8 +18,8 @@ private:
 	// lfo
 	//double lfoRate = 10.0f;//0.0f;
 	//double lfoDepth = 2.0f;
-	float lfoSampleRate = 100.0f;
-	float lfoFrequency = 10.0f;
+	float lfoSampleRate = 2.0f; // 1.0001 -> 10.0 ?
+	float lfoFrequency = 1.0f;
 
 	// Interface Parameters
 	float minDelay = 10;
