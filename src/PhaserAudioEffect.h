@@ -37,14 +37,14 @@ private:
 	const float lfoFrequency = 0.98f;	// (under 20 Hz). Many chorus units have an LFO frequency range between 0.1 Hz and 6 Hz
 
 	// Interface Parameters
-	float lfoSampleRate = 2.0f; // 1.0001 -> 10.0 ?
-	float depth = 0;
+	float lfoSampleRate = 1.5f; // 1.0001 -> 10.0 ?
+	float depth = 50;
 
 	float offset = 0;
-	float intensity = 0;
-	int stages = 0;
+	float intensity = 50;
+	int stages = 2;
 
-	float feedback = 0;  // This phaser design sounds best with feedback(intensity) values between 75 % and 95 % .
+	float feedback = 25;  // This phaser design sounds best with feedback(intensity) values between 75 % and 95 % .
 	int feedbackIterations = 0;
 
 
@@ -52,6 +52,8 @@ private:
 
 public:
 	
+	double ModulateFrequency(double lfoValue, double minFrequency, double maxFrequency);
+
 	void getWetSoundSize(const size& drySoundSize, size& wetSoundSize) override;
 
 	void applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) override;

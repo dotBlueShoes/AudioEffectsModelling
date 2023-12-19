@@ -2,6 +2,8 @@
 #include "Audio/Framework.hpp"
 
 #include "Biquad.hpp"
+#include <cmath>
+#include <spdlog/spdlog.h>
 
 class AllPassFilter {
 private:
@@ -22,4 +24,5 @@ public:
 	double GetG();
 	double GetS();
 	void CalculateFilterCoefficients();
+	double process(double input);
 };

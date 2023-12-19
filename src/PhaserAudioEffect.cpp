@@ -1,37 +1,80 @@
 #include "PhaserAudioEffect.h"
 
+
+double PhaserAudioEffect::ModulateFrequency(double lfoValue, double minFrequency, double maxFrequency) {
+    // Ensure lfoValue is in the range [-1, 1]
+    lfoValue = std::max(-1.0, std::min(lfoValue, 1.0));
+
+    // Scale and shift the LFO value from [-1, 1] to [0, 1]
+    double normalizedLfoValue = (lfoValue + 1.0) * 0.5;
+
+    // Interpolate between the min and max frequencies based on the LFO value
+    return minFrequency + normalizedLfoValue * (maxFrequency - minFrequency);
+}
+
+
 void PhaserAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
     cachedDrySoundSize = drySoundSize;
     wetSoundSize = drySoundSize;
 }
 
 void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) {
-
-    // 1. Reset
+    // Reset and initialize the LFO
     lfo.Reset(lfoSampleRate);
-
-    // 2-3. Set params
     lfo.Initialize(Waveform::sine, lfoFrequency);
 
-    for (size i = 0; i < cachedDrySoundSize; ++i) {
+    const auto&& dryNormalized = Math::NormalizePercent(dry);
+    const auto&& wetNormalized = Math::NormalizePercent(wet);
+
+
+    // The maximum value for scaling from int16_t to float range [-1.0, 1.0]
+    constexpr float maxInt16 = static_cast<float>(std::numeric_limits<int16_t>::max());
+
+    // Define min and max frequencies for each APF stage
+    const double minFrequencies[PHASER_STAGES] = { APF_0_MIN_FREQUENCY, APF_1_MIN_FREQUENCY, /*...*/ };
+    const double maxFrequencies[PHASER_STAGES] = { APF_0_MAX_FREQUENCY, APF_1_MAX_FREQUENCY, /*...*/ };
+
+    // Process each sample through the phaser stages
+    for (size i = 0; i < originalSoundSize; ++i) {
+        // Render the current LFO value
         auto&& lfoCurrent = lfo.RenderAudio().normal;
 
-        double depthNormalized = Math::NormalizePercent(depth);
-        double modulatorValue = lfoCurrent * depthNormalized;
+        // Modulate the frequency of each all-pass filter based on the LFO value
+        for (size stage = 0; stage < PHASER_STAGES; ++stage) {
+            double modulatedFrequency = ModulateFrequency(lfoCurrent, minFrequencies[stage], maxFrequencies[stage]);
+            allPassFilter[stage].fc = modulatedFrequency;
+            allPassFilter[stage].CalculateFilterCoefficients();
+        }
 
-        spdlog::info("v: {}", modulatorValue);
 
-        // --- calculate modulated values for each APF
-        //AudioFilterParameters params = apf[0].getParameters();
-        //params.fc = doBipolarModulation(modulatorValue, apf0_minF, apf0_maxF);
-        //apf[0].setParameters(params);
+        // Calculate feedback components
+        // ...
+        // Omitted for brevity - implement feedback calculations as per the algorithm
 
-        //params = apf[1].getParameters();
-        //params.fc = doBipolarModulation(modulatorValue, apf1_minF, apf1_maxF);
-        //apf[1].setParameters(params);
+        // Process the sample through the cascade of APFs
+        float inputSample = static_cast<float>(sound.pcmData[i]) / maxInt16;
+        float wetSample = inputSample; // Start with the input sample
+
+        for (auto& filter : allPassFilter) {
+            //spdlog::info("before norm sample : {}", wetSample);
+            wetSample = filter.process(wetSample);
+        }
+
+        // Combine the wet and dry signals
+        float drySample = inputSample * dryNormalized;
+        wetSample = (wetSample * wetNormalized) + drySample;
+
+        // Clip the output to avoid overflow
+        wetSample = std::max(-1.0f, std::min(wetSample, 1.0f));
+
+        //spdlog::info("dry sample : {}", sound.pcmData[i]);
+        // Convert back to int16_t and write to the output buffer
+        sound.pcmData[i] = static_cast<int16_t>(wetSample * maxInt16);
+       // spdlog::info("sample : {}", sound.pcmData[i]);
     }
-
 }
+
+
 
 void PhaserAudioEffect::DisplayEffectWindow()
 {
