@@ -49,23 +49,65 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
 
     { // Apply wet layer
 
-        // When bipolar we need to add at the begining.
-        auto&& wetBeginIndex = (modulation == Modulation::bipolar) ? cachedHalfDepthInSamples + cachedDelayInSamples : cachedDelayInSamples;
+        auto&& wetBeginIndex = cachedHalfDepthInSamples + cachedDelayInSamples;
 
         // 0'ed sound for delayInSamples value.
         std::memset(wetSound.pcmData, 0, wetBeginIndex * 2 /* int16 */);
 
         double currentIndex = wetBeginIndex;
-        size j = 0;
-        for (; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
-            auto&& lfoCurrent = (lfo.RenderAudio().normal) + 1;
-            auto&& drySampleI = j + wetBeginIndex;
-            auto&& resultSample = wetSound.pcmData[drySampleI];
+        
 
-            currentIndex += lfoCurrent;
+        //const double MAX = 20.0f;
+        
 
-            resultSample = drySoundData[(size)currentIndex] * wetNormalized;
-        }
+        // 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+        // 1.3
+        // 1.4
+        // 2.1
+        
+
+        //if (modulation == Modulation::unipolar) {
+        //    double counter = 0.0f;
+        //    for (size j = 0; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
+        //        auto&& lfoCurrent = (lfo.RenderAudio().normal);
+        //        auto&& drySampleI = j + wetBeginIndex;
+        //        auto&& resultSample = wetSound.pcmData[drySampleI];
+        //
+        //
+        //        if (lfoCurrent < 0) {
+        //            lfoCurrent = (-lfoCurrent);
+        //        }
+        //
+        //        //lfoCurrent = (lfoCurrent + 1);
+        //
+        //        //spdlog::info(lfoCurrent);
+        //
+        //        counter += lfoCurrent;
+        //        if (counter <= 1) {
+        //            //spdlog::info("a");
+        //        } else {
+        //            currentIndex = drySampleI;
+        //            counter = 0.0f;
+        //            //spdlog::info("b");
+        //        }
+        //
+        //        resultSample = drySoundData[(size)currentIndex] * wetNormalized;
+        //    }
+        //} else { // bipolar
+            for (size j = 0; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
+                auto&& lfoCurrent = (lfo.RenderAudio().normal) + 1;
+                auto&& drySampleI = j + wetBeginIndex;
+                auto&& resultSample = wetSound.pcmData[drySampleI];
+
+                currentIndex += lfoCurrent;
+
+                resultSample = drySoundData[(size)currentIndex] * wetNormalized;
+            }
+        //}
+
+
+        //spdlog::info("i: {}, j: {}", currentIndex, j);
+        
 
             // Apply echo.
         for (size i = 0; i < feedbackIterations; ++i) {
