@@ -2,17 +2,16 @@
 
 void ChorusAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSoundSize) {
     cachedHalfDepthInSamples = Math::MilisecondsToSample(depth, 44100);
-    cachedHalfDelayInSamples = Math::MilisecondsToSample(delay, 44100);
+    cachedDelayInSamples = Math::MilisecondsToSample(delay, 44100);
 
     cachedDrySoundSize = drySoundSize;
-    wetSoundSize = drySoundSize + cachedHalfDepthInSamples + cachedHalfDelayInSamples;
+    wetSoundSize = drySoundSize + cachedHalfDepthInSamples + (cachedDelayInSamples * feedbackIterations);
     cachedHalfDepthInSamples /= 2;
 }
 
 void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& wetSound) {
 
-    //const auto&& lfoSampleRate = 100.0f;
-    //const auto&& lfoFrequency = 10.0f;       // We want very high frequency. 
+    const auto&& feedbackNormalized = Math::NormalizePercent(feedback);
     const auto&& dryNormalized = Math::NormalizePercent(dry);
     const auto&& wetNormalized = Math::NormalizePercent(wet);
 
@@ -24,30 +23,23 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
 
     // 4. Call processAudioSample pass input value in and receiving the output value as the return variable.
 
-    //for (size i = 0; i < 20; ++i) {
-    //    LFOResult result = lfo.RenderAudio();
-    //    spdlog::info("n: {:1.5}, i: {:1.5}", result.normal, result.inverted);
-    //    spdlog::info("q: {:1.5}, j: {:1.5}", result.quadPhase, result.quadPhaseInverted);
-    //}
-
-    //spdlog::info("modDepth: {}", cachedHalfDelayInSamples);
-
     // Create a copy of buffor with space before and after the original sound.
     int16_t* drySoundData = new int16_t[cachedDrySoundSize + (cachedHalfDepthInSamples * 2)];
     std::memset(drySoundData, 0, cachedHalfDepthInSamples * 2 /* int16 */);
     std::memcpy(drySoundData + cachedHalfDepthInSamples, wetSound.pcmData, cachedDrySoundSize * 2 /* int16 */);
     std::memset(drySoundData + cachedDrySoundSize + cachedHalfDepthInSamples, 0, cachedHalfDepthInSamples * 2 /* int16 */);
 
-    // spowolnienie/przyœpieszenie dzwiêku to zmiana pitchu
-    // ¿eby przyœpieszyæ dzwiêk omijamy co któryœ orginalny sample
-    // ¿aby spowolniæ dzwiêk dok³adamy ten sam sample
+    // Spowolnienie/przyœpieszenie dzwiêku to zmiana pitchu
+    //  ¿eby przyœpieszyæ dzwiêk omijamy co któryœ orginalny sample
+    //  ¿eby spowolniæ dzwiêk dok³adamy ten sam sample
 
-    // jeœli najpierw bêdê na 2015 wezmê 2023
-    // a potem bêdê na 2016 i wezmê 2018
-    // to znów mamy ten sam efekt! A nie o to chodzi!
+    // Prev
+    //// Jeœli najpierw bêdê na i2015 wezmê i2023
+    ////  a potem bêdê na i2016 i wezmê i2018
+    ////  to znów otrzymujemy efekt czytania w z³ej kolejnoœci! A nie o to chodzi!
 
     { // Apply wet layer
-        auto&& wetBeginIndex = cachedHalfDepthInSamples + cachedHalfDelayInSamples;
+        auto&& wetBeginIndex = cachedHalfDepthInSamples + cachedDelayInSamples;
 
         // 0'ed sound for delayInSamples value.
         std::memset(wetSound.pcmData, 0, wetBeginIndex * 2 /* int16 */);
@@ -55,57 +47,28 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         double currentIndex = wetBeginIndex;
         size j = 0;
         for (; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
-            //auto&& currentLFO = lfo.RenderAudio().normal * depth;
             auto&& currentLFO = (lfo.RenderAudio().normal) + 1;
             auto&& drySampleI = j + wetBeginIndex;
             auto&& resultSample = wetSound.pcmData[drySampleI];
 
-            //if (currentLFO < 1) {
-            //    //currentLFO /= depth;
-            //    currentLFO = 0;
-            //} else {
-            //    // [1.0-2.0] to [1.0-depth]
-            //    currentLFO = Math::Remap(currentLFO, 1.0f, 2.0f, 1.0f, depth);
-            //}
-
-            //spdlog::info("lfo: {}", currentLFO);
-
-            //currentLFO = !(currentLFO < 1) * currentLFO;
-
             currentIndex += currentLFO;
-            //spdlog::info("d: {}, w: {}", i + cachedHalfDelayInSamples, currentIndex);
 
             resultSample = drySoundData[(size)currentIndex] * wetNormalized;
         }
 
-        //spdlog::info("i: {}", currentIndex);
-        //spdlog::info("j: {}", j);
+        // Apply feedback-echo . Apply only on "flanger" and "none" settings.
+        //if ((uint8_t)type <= ModulatedDelayType::flanger) {
 
-        //for (size i = 0; i < cachedDrySoundSize; ++i) {
-        //    auto&& currentLFO = lfo.RenderAudio().normal;
-        //    auto&& drySampleI = i + cachedHalfDepthInSamples;
-        //    auto&& previousSample = wetSound.pcmData[drySampleI - 1];
-        //    auto&& resultSample = wetSound.pcmData[drySampleI];
-        //
-        //    if (currentLFO > 0) {
-        //        // It's faster so take sample from the future.
-        //        size&& wetSampleI = drySampleI + (int16_t)(cachedHalfDepthInSamples * currentLFO);
-        //        auto&& wetSample = drySoundData[wetSampleI];
-        //        resultSample = wetSample * wetNormalized;
-        //    } else {
-        //        // It's slower so take sample from the past.
-        //        auto&& wetSample = previousSample;
-        //        resultSample = wetSample * wetNormalized;
-        //    }
-        //}
+            // Apply echo.
+        for (size i = 0; i < feedbackIterations; ++i) {
+            for (size j = 0; j < cachedDrySoundSize; ++j) {
+                auto&& drySampleI = cachedHalfDepthInSamples + (cachedDelayInSamples * (i + 1)) + j;
+                auto&& resultSample = wetSound.pcmData[drySampleI];
+        
+                resultSample = resultSample + ((float)(drySoundData[j]) * std::pow(feedbackNormalized, (i + 1)));
+            }
+        }
 
-        // It's wrong! It's not about sample position but about sample pitch!
-        //for (size i = 0; i < cachedDrySoundSize; ++i) {
-        //    auto&& sample = wetSound.pcmData[i + cachedHalfDepthInSamples];
-        //    size selectedSample = i + cachedHalfDepthInSamples + (int16_t)(cachedHalfDepthInSamples * lfo.RenderAudio().normal);
-        //    spdlog::info("o: {}, s: {}", i + cachedHalfDepthInSamples, selectedSample);
-        //    auto&& wetSample = wetSound.pcmData[selectedSample];
-        //    sample = wetSample * wetNormalized;
         //}
     }
 
@@ -167,6 +130,7 @@ void ChorusAudioEffect::DisplayEffectWindow()
             if (depth < 3) delay = 3;
             else if (depth > 7) depth = 7;
 
+            feedbackIterations = 0;
             delay = 0;
             wet = 100;
             dry = 0;
@@ -182,8 +146,10 @@ void ChorusAudioEffect::DisplayEffectWindow()
 
             if (delay < 1) delay = 1;
 
+            feedbackIterations = 0;
             wet = 80;
             dry = 100;
+            
         }
         ImGui::EndDisabled();
     }
@@ -195,30 +161,33 @@ void ChorusAudioEffect::DisplayEffectWindow()
     switch (type) {
         case ModulatedDelayType::flanger: {
             ImGui::SliderFloat("Depth [ms]", &depth, 2, 7);
+
+            ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
+            ImGui::SliderInt("Feedback Iterations [-]", &feedbackIterations, 0, 20);
         } break;
         case ModulatedDelayType::vibrato: {
             ImGui::SliderFloat("Depth [ms]", &depth, 3, 7);
         } break;
-        default:
+        case ModulatedDelayType::chorus: {
             ImGui::SliderFloat("Depth [ms]", &depth, 1, 30);
             ImGui::SliderFloat("Delay [ms]", &delay, 1, 30);
+        } break;
+        default:
+            ImGui::SliderFloat("Depth [ms]", &depth, 1, 30);
+            ImGui::SliderFloat("Delay [ms]", &delay, 0, 30);
+
+            // Use ImGuiSliderFlags_NoInput flag to disable CTRL+Click here.
+            ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, elementName);
+
+            ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
+            ImGui::SliderInt("Feedback Iterations [-]", &feedbackIterations, 0, 20);
+
+            ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
+            ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
     }
     
 
-    //ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
-    //ImGui::SliderInt("Iterations [-]", &iterations, 0, 100);
-
-    // Use ImGuiSliderFlags_NoInput flag to disable CTRL+Click here.
-    if (type == ModulatedDelayType::none) {
-        ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, elementName);
-    }
-
-    
-
-    if (type == ModulatedDelayType::none) {
-        ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
-        ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
-    }
+    //
 
     ImGui::End();
 }

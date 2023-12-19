@@ -17,7 +17,7 @@ public:
 
 	void applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& sound) override;
 
-	DistortionAudioEffect() : AudioEffect(100, 0) {};
+	DistortionAudioEffect() : AudioEffect(50, 0) {};
 	void DisplayEffectWindow() override;
 };
 

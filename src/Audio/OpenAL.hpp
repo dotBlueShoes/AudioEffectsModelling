@@ -277,6 +277,11 @@ namespace OpenAL {
         // Fill rest with 0'es // !!! That might not be needed tho!
         std::memset((finalWetSoundData + originalSoundSize), 0, (finalWetSoundSize - originalSoundSize) * 2 /* int16 */);
 
+
+        for (size i = 0; i < originalSoundSize; ++i) {
+            finalWetSoundData[i] *= dryGain;
+        }
+
         //for (size i = originalSoundSize; i < finalWetSoundSize; ++i) {
         //    finalWetSoundData[i] = 0;
         //}

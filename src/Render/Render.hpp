@@ -228,19 +228,19 @@ namespace Controls {
 
             static ALfloat temp = 1.0;
 
-            //ImGui::Text("Dry");
-            //
-            //{
-            //    ImGui::SliderFloat("Gain##IN", &drawCallParams.gain, 0, OpenAL::MAX_GAIN);
-            //}
+            ImGui::Text("Dry Settings");
+            
+            {
+                ImGui::SliderFloat("Gain##IN", &drawCallParams.gain, 0, 1);
+            }
 
-            ImGui::Text("Wet");
+            ImGui::Text("Source Settings");
 
             {
                 alGetSourcef(currentSource, AL_GAIN, &temp);
-                if (ImGui::SliderFloat("Gain##OUT", &temp, 0, OpenAL::MAX_GAIN)) {
+                if (ImGui::SliderFloat("Volume##OUT", &temp, 0, OpenAL::MAX_GAIN)) {
                     alSourcef(currentSource, AL_GAIN, temp);
-                    OpenAL::CheckError("Gain");
+                    OpenAL::CheckError("Volume");
                 }
 
                 alGetSourcef(currentSource, AL_PITCH, &temp);
