@@ -5,8 +5,18 @@ void ChorusAudioEffect::getWetSoundSize(const size& drySoundSize, size& wetSound
     cachedDelayInSamples = Math::MilisecondsToSample(delay, 44100);
 
     cachedDrySoundSize = drySoundSize;
-    wetSoundSize = drySoundSize + cachedHalfDepthInSamples + (cachedDelayInSamples * feedbackIterations);
-    cachedHalfDepthInSamples /= 2;
+
+    // Final sound length differs with modulation setting.
+    if (modulation == Modulation::unipolar) {
+        cachedHalfDepthInSamples /= 2;
+        wetSoundSize = drySoundSize + cachedHalfDepthInSamples + (cachedDelayInSamples * feedbackIterations);
+    } else { // bipolar
+        wetSoundSize = drySoundSize + cachedHalfDepthInSamples + (cachedDelayInSamples * feedbackIterations);
+        cachedHalfDepthInSamples /= 2;
+    }
+
+    
+    
 }
 
 void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::ReadWavData& wetSound) {
@@ -38,7 +48,9 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     ////  to znów otrzymujemy efekt czytania w z³ej kolejnoœci! A nie o to chodzi!
 
     { // Apply wet layer
-        auto&& wetBeginIndex = cachedHalfDepthInSamples + cachedDelayInSamples;
+
+        // When bipolar we need to add at the begining.
+        auto&& wetBeginIndex = (modulation == Modulation::bipolar) ? cachedHalfDepthInSamples + cachedDelayInSamples : cachedDelayInSamples;
 
         // 0'ed sound for delayInSamples value.
         std::memset(wetSound.pcmData, 0, wetBeginIndex * 2 /* int16 */);
@@ -54,9 +66,6 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
 
             resultSample = drySoundData[(size)currentIndex] * wetNormalized;
         }
-
-        // Apply feedback-echo . Apply only on "flanger" and "none" settings.
-        //if ((uint8_t)type <= ModulatedDelayType::flanger) {
 
             // Apply echo.
         for (size i = 0; i < feedbackIterations; ++i) {
@@ -84,9 +93,14 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
 void ChorusAudioEffect::DisplayEffectWindow()
 {
     const char STRING_EFFECT_BASIC_DELAY[] = "Effect Chorus ";
+
     const size waveformTypeCount(3);
     const char* waveformNames[waveformTypeCount] { "Sine", "Triangle", "Sawtooth" };
-    const char* elementName = (waveform >= 0 && waveform < waveformTypeCount) ? waveformNames[waveform] : "Unknown";
+    const char* waveformName = (waveform >= 0 && waveform < waveformTypeCount) ? waveformNames[waveform] : "Unknown";
+
+    const size modulationTypeCount(2);
+    const char* modulationNames[waveformTypeCount] { "Bipolar", "Unipolar" };
+    const char* modulationName = (modulation >= 0 && modulation < modulationTypeCount) ? modulationNames[modulation] : "Unknown";
 
     char windowTitle[100]; // Buffer to store the final string with enough space
 
@@ -109,6 +123,7 @@ void ChorusAudioEffect::DisplayEffectWindow()
         if ( ImGui::Button("Flanger")) {
             type = ModulatedDelayType::flanger;
             waveform = Waveform::triangle;
+            modulation = Modulation::unipolar;
 
             if (depth < 2) delay = 2;
             else if (depth > 7) depth = 7;
@@ -125,6 +140,7 @@ void ChorusAudioEffect::DisplayEffectWindow()
         if ( ImGui::Button("Vibrato")) {
             type = ModulatedDelayType::vibrato;
             waveform = Waveform::sine;
+            modulation = Modulation::bipolar;
 
             if (depth < 3) delay = 3;
             else if (depth > 7) depth = 7;
@@ -142,6 +158,7 @@ void ChorusAudioEffect::DisplayEffectWindow()
         if (ImGui::Button("Chorus")) {
             type = ModulatedDelayType::chorus;
             waveform = Waveform::triangle;
+            modulation = Modulation::bipolar;
 
             if (delay < 1) delay = 1;
 
@@ -176,7 +193,8 @@ void ChorusAudioEffect::DisplayEffectWindow()
             ImGui::SliderFloat("Delay [ms]", &delay, 0, 30);
 
             // Use ImGuiSliderFlags_NoInput flag to disable CTRL+Click here.
-            ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, elementName);
+            ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, waveformName);
+            ImGui::SliderInt("Modulation", &modulation, 0, modulationTypeCount - 1, modulationName);
 
             ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
             ImGui::SliderInt("Feedback Iterations [-]", &feedbackIterations, 0, 20);

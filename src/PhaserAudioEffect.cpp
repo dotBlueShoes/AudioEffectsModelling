@@ -13,11 +13,13 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     // 2-3. Set params
     lfo.Initialize(Waveform::sine, lfoFrequency);
 
-    for (size i; i < cachedDrySoundSize; ++i) {
+    for (size i = 0; i < cachedDrySoundSize; ++i) {
         auto&& lfoCurrent = lfo.RenderAudio().normal;
 
         double depthNormalized = Math::NormalizePercent(depth);
         double modulatorValue = lfoCurrent * depthNormalized;
+
+        spdlog::info("v: {}", modulatorValue);
 
         // --- calculate modulated values for each APF
         //AudioFilterParameters params = apf[0].getParameters();

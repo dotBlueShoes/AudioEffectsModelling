@@ -1,7 +1,7 @@
 #pragma once
 #include "Audio/Framework.hpp"
 
-#include "Biquad.hpp";
+#include "Biquad.hpp"
 
 class AllPassFilter {
 private:
@@ -17,9 +17,9 @@ public:
 	double Q = 0.707;	// Filter Q
 
 	
-	void Reset();
-	void SetSampleRate();
-	void GetG();
-	void GetS();
+	void Reset(const double& newSampleRate);
+	void SetSampleRate(const double& newSampleRate);
+	double GetG();
+	double GetS();
 	void CalculateFilterCoefficients();
 };

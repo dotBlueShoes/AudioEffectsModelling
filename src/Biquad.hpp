@@ -13,10 +13,10 @@ const size STATES_COUNT = 4;
 enum class FilterCoefficients : uint8_t { a0, a1, a2, b1, b2, c0, d0 };
 
 
-class Biquad {
+class Biquad  {
 public:
 
-	enum class Algorithm : uint8_t { 
+	enum class Algorithm : uint8_t {
 		kDirect, 
 		kCanonical, 
 		kTransposeDirect, 

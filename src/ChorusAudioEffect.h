@@ -10,6 +10,11 @@ enum ModulatedDelayType : uint8_t {
 	whiteChorus = 4
 };
 
+enum Modulation : uint8_t {
+	bipolar = 0,
+	unipolar = 1
+};
+
 class ChorusAudioEffect : public AudioEffect {
 
 private:
@@ -24,6 +29,7 @@ private:
 	float delay = 1;
 
 	int waveform = Waveform::triangle; // fixed for chorus same as mixxer values!
+	int modulation = Modulation::bipolar;
 
 	float feedback = 0;
 	int feedbackIterations = 0;
