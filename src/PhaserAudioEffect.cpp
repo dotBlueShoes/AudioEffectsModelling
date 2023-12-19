@@ -31,8 +31,9 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     constexpr float maxInt16 = static_cast<float>(std::numeric_limits<int16_t>::max());
 
     // Define min and max frequencies for each APF stage
-    const double minFrequencies[PHASER_STAGES] = { APF_0_MIN_FREQUENCY, APF_1_MIN_FREQUENCY, /*...*/ };
-    const double maxFrequencies[PHASER_STAGES] = { APF_0_MAX_FREQUENCY, APF_1_MAX_FREQUENCY, /*...*/ };
+    const double minFrequencies[PHASER_STAGES] = { APF_0_MIN_FREQUENCY, APF_1_MIN_FREQUENCY, APF_2_MIN_FREQUENCY, APF_3_MIN_FREQUENCY, APF_4_MIN_FREQUENCY, APF_5_MIN_FREQUENCY };
+    const double maxFrequencies[PHASER_STAGES] = { APF_0_MAX_FREQUENCY, APF_1_MAX_FREQUENCY,  APF_2_MAX_FREQUENCY, APF_3_MAX_FREQUENCY, APF_4_MAX_FREQUENCY, APF_5_MAX_FREQUENCY};
+
     // Feedback sample storage
     float feedbackSample = 0.0f;
 
@@ -41,19 +42,26 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         // Render the current LFO value
         auto&& lfoCurrent = lfo.RenderAudio().normal;
 
+        // Apply intensity to modulation
+        double intensityScale = intensity / 100.0; // Assuming intensity is a percentage
+        double modulatedValue = lfoCurrent * intensityScale;
+
+
         for (auto& filter : allPassFilter) {
             filter.Reset(44100);
         }
 
         // Modulate the frequency of each all-pass filter based on the LFO value
         for (size stage = 0; stage < PHASER_STAGES; ++stage) {
-            double modulatedFrequency = ModulateFrequency(lfoCurrent, minFrequencies[stage], maxFrequencies[stage]);
+            double modulatedFrequency = ModulateFrequency(modulatedValue, minFrequencies[stage], maxFrequencies[stage]);
             allPassFilter[stage].fc = modulatedFrequency;
             allPassFilter[stage].CalculateFilterCoefficients();
         }
 
         // Process the sample through the cascade of APFs
-        float inputSample = static_cast<float>(sound.pcmData[i]) / maxInt16;
+        // Include feedback in the input sample
+        float inputSample = (static_cast<float>(sound.pcmData[i]) + feedbackSample * (feedback / 100.0f)) / maxInt16;
+
         float wetSample = inputSample; // Start with the input sample
 
         for (auto& filter : allPassFilter) {
@@ -64,6 +72,9 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
                 spdlog::info("before norm sample : {}", wetSample);
             }*/
         }
+
+        // Store the output for feedback
+        feedbackSample = wetSample;
 
         // Combine the wet and dry signals
         float drySample = inputSample * dryNormalized;
@@ -97,7 +108,7 @@ void PhaserAudioEffect::DisplayEffectWindow()
     ImGui::SliderFloat("Depth [%]", &depth, 0, 100);
 
     ImGui::SliderFloat("Offset [-]", &offset, -1.0, 1.0);
-    //ImGui::SliderFloat("Intensity [%]", &intensity, 0, 100);
+    ImGui::SliderFloat("Intensity [%]", &intensity, 0, 100);
     ImGui::SliderInt("Stages [ms]", &stages, 1, 3);
 
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
