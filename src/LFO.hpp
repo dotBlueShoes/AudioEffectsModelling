@@ -44,7 +44,6 @@ private:
 public:
 	Waveform waveform;
 	double frequency;
-	//double amplitude;
 
 	void Initialize(const Waveform& newWaveform, const double& newFrequency);
 

@@ -22,7 +22,6 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     lfo.Initialize((Waveform)waveform, lfoFrequency);
 
     // 4. Call processAudioSample pass input value in and receiving the output value as the return variable.
-
     // Create a copy of buffor with space before and after the original sound.
     int16_t* drySoundData = new int16_t[cachedDrySoundSize + (cachedHalfDepthInSamples * 2)];
     std::memset(drySoundData, 0, cachedHalfDepthInSamples * 2 /* int16 */);
@@ -47,11 +46,11 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         double currentIndex = wetBeginIndex;
         size j = 0;
         for (; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
-            auto&& currentLFO = (lfo.RenderAudio().normal) + 1;
+            auto&& lfoCurrent = (lfo.RenderAudio().normal) + 1;
             auto&& drySampleI = j + wetBeginIndex;
             auto&& resultSample = wetSound.pcmData[drySampleI];
 
-            currentIndex += currentLFO;
+            currentIndex += lfoCurrent;
 
             resultSample = drySoundData[(size)currentIndex] * wetNormalized;
         }

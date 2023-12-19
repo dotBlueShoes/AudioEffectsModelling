@@ -16,17 +16,13 @@ private:
 
 	ModulatedDelayType type = ModulatedDelayType::chorus;
 	LFO lfo;
-
-	// lfo
-	//double lfoRate = 10.0f;//0.0f;
-	//double lfoDepth = 2.0f;
-	float lfoSampleRate = 2.0f; // 1.0001 -> 10.0 ?
-	float lfoFrequency = 0.98f;	// (under 20 Hz). Many chorus units have an LFO frequency range between 0.1 Hz and 6 Hz
+	const float lfoFrequency = 0.98f;	// (under 20 Hz). Many chorus units have an LFO frequency range between 0.1 Hz and 6 Hz
 
 	// Interface Parameters
+	float lfoSampleRate = 2.0f; // 1.0001 -> 10.0 ?
 	float depth = 14;
 	float delay = 1;
-	//int sampleRate = 0;
+
 	int waveform = Waveform::triangle; // fixed for chorus same as mixxer values!
 
 	float feedback = 0;
