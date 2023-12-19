@@ -33,11 +33,17 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
     // Define min and max frequencies for each APF stage
     const double minFrequencies[PHASER_STAGES] = { APF_0_MIN_FREQUENCY, APF_1_MIN_FREQUENCY, /*...*/ };
     const double maxFrequencies[PHASER_STAGES] = { APF_0_MAX_FREQUENCY, APF_1_MAX_FREQUENCY, /*...*/ };
+    // Feedback sample storage
+    float feedbackSample = 0.0f;
 
     // Process each sample through the phaser stages
     for (size i = 0; i < originalSoundSize; ++i) {
         // Render the current LFO value
         auto&& lfoCurrent = lfo.RenderAudio().normal;
+
+        for (auto& filter : allPassFilter) {
+            filter.Reset(44100);
+        }
 
         // Modulate the frequency of each all-pass filter based on the LFO value
         for (size stage = 0; stage < PHASER_STAGES; ++stage) {
@@ -46,11 +52,6 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
             allPassFilter[stage].CalculateFilterCoefficients();
         }
 
-
-        // Calculate feedback components
-        // ...
-        // Omitted for brevity - implement feedback calculations as per the algorithm
-
         // Process the sample through the cascade of APFs
         float inputSample = static_cast<float>(sound.pcmData[i]) / maxInt16;
         float wetSample = inputSample; // Start with the input sample
@@ -58,6 +59,10 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         for (auto& filter : allPassFilter) {
             //spdlog::info("before norm sample : {}", wetSample);
             wetSample = filter.process(wetSample);
+           /* if (wetSample == wetSample)
+            {
+                spdlog::info("before norm sample : {}", wetSample);
+            }*/
         }
 
         // Combine the wet and dry signals
@@ -92,7 +97,7 @@ void PhaserAudioEffect::DisplayEffectWindow()
     ImGui::SliderFloat("Depth [%]", &depth, 0, 100);
 
     ImGui::SliderFloat("Offset [-]", &offset, -1.0, 1.0);
-    ImGui::SliderFloat("Intensity [%]", &intensity, 0, 100);
+    //ImGui::SliderFloat("Intensity [%]", &intensity, 0, 100);
     ImGui::SliderInt("Stages [ms]", &stages, 1, 3);
 
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);

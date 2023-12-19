@@ -35,19 +35,25 @@ void AllPassFilter::CalculateFilterCoefficients() {
 	biquad.coefficients[(size_t)FilterCoefficients::a2] = 1.0 + alpha;
 	biquad.coefficients[(size_t)FilterCoefficients::b1] = -2.0 * cosw0;
 	biquad.coefficients[(size_t)FilterCoefficients::b2] = 1.0 - alpha;
-	spdlog::info("before norm sample : {}", biquad.coefficients[(size_t)FilterCoefficients::a0]);
-	spdlog::info("before norm sample : {}", biquad.coefficients[(size_t)FilterCoefficients::a1]);
-	spdlog::info("before norm sample : {}", biquad.coefficients[(size_t)FilterCoefficients::a2]);
-	spdlog::info("before norm sample : {}", biquad.coefficients[(size_t)FilterCoefficients::b1]);
-	spdlog::info("before norm sample : {}", biquad.coefficients[(size_t)FilterCoefficients::b2]);
+	//spdlog::info("a0 : {}", biquad.coefficients[(size_t)FilterCoefficients::a0]);
+	//spdlog::info("a1 : {}", biquad.coefficients[(size_t)FilterCoefficients::a1]);
+	//spdlog::info("a2 : {}", biquad.coefficients[(size_t)FilterCoefficients::a2]);
+	//spdlog::info("b1 : {}", biquad.coefficients[(size_t)FilterCoefficients::b1]);
+	//spdlog::info("b2 : {}", biquad.coefficients[(size_t)FilterCoefficients::b2]);
 };
 
 double AllPassFilter::process(double input) {
+	//spdlog::info("input : {}", input);
+	//spdlog::info("state 0 : {}", biquad.states[0]);
+	//spdlog::info("state 1: {}", biquad.states[1]);
+	//spdlog::info("state 2 : {}", biquad.states[2]);
+	//spdlog::info("state 3 : {}", biquad.states[3]);
 	double output = (biquad.coefficients[(size_t)FilterCoefficients::a0] * input +
 		biquad.coefficients[(size_t)FilterCoefficients::a1] * biquad.states[0] +
 		biquad.coefficients[(size_t)FilterCoefficients::a2] * biquad.states[1] -
 		biquad.coefficients[(size_t)FilterCoefficients::b1] * biquad.states[2] -
 		biquad.coefficients[(size_t)FilterCoefficients::b2] * biquad.states[3]);
+	//spdlog::info("output : {}", output);
 
 	// Update states
 	biquad.states[1] = biquad.states[0];

@@ -41,7 +41,6 @@ private:
 	float depth = 50;
 
 	float offset = 0;
-	float intensity = 50;
 	int stages = 2;
 
 	float feedback = 25;  // This phaser design sounds best with feedback(intensity) values between 75 % and 95 % .
