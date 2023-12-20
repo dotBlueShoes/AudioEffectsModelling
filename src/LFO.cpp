@@ -15,7 +15,7 @@ double Math::UnipolarToBipolar(const double& value) {
 void LFO::Initialize(const Waveform& newWaveform, const double& newFrequency) {
 	//if (newFrequency != frequency) // we're scared of division i guess.
 		// Update phase inc based on osc freq and fs.
-		phaseIncremental = newFrequency / sampleRate;
+		//phaseIncremental = newFrequency / sampleRate;
 	//phaseIncremental = 1 * 0.0;
 
 	//frequency = newFrequency;
@@ -28,8 +28,8 @@ void LFO::Initialize(const Waveform& newWaveform, const double& newFrequency) {
 void LFO::Reset(const double& newSampleRate) {
 	// Set Values
 	sampleRate = newSampleRate;
-	phaseIncremental = frequency / sampleRate;
-	//phaseIncremental = 1 * 0.23;
+	//phaseIncremental = frequency / sampleRate;
+	phaseIncremental = 1.0f * newSampleRate;
 
 	// Reset Values
 	moduloCounter = 0.0;

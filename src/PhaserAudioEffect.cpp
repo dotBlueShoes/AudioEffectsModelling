@@ -108,7 +108,9 @@ void PhaserAudioEffect::DisplayEffectWindow()
     //ImGui::SliderInt("Rate [ms]", &lfoSampleRate, 0, 1000);
 
     ImGui::Text("Makes the wavering sound faster or slower");
-    ImGui::SliderFloat("SampleRate [-]", &lfoSampleRate, 1, 10);
+    //ImGui::SliderFloat("SampleRate [-]", &lfoSampleRate, 1, 10);
+    //ImGui::SliderFloat("SampleRate [-]", &lfoSampleRate, 0.001, 0.999);
+    ImGui::SliderFloat("SampleRate [-]", &lfoSampleRate, 0.001, 0.100);
 
     ImGui::Dummy(guiControlOffset);
     ImGui::Text("How much effect we get");

@@ -37,7 +37,7 @@ private:
 	const float lfoFrequency = 0.98f;	// (under 20 Hz). Many chorus units have an LFO frequency range between 0.1 Hz and 6 Hz
 
 	// Interface Parameters
-	float lfoSampleRate = 1.5f; // 1.0001 -> 10.0 ?
+	float lfoSampleRate = 0.03f; //1.5f; // 1.0001 -> 10.0 ?
 	float depth = 50;
 
 	//float offset = 0;
