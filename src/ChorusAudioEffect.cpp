@@ -66,34 +66,34 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         // 2.1
         
 
-        //if (modulation == Modulation::unipolar) {
-        //    double counter = 0.0f;
-        //    for (size j = 0; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
-        //        auto&& lfoCurrent = (lfo.RenderAudio().normal);
-        //        auto&& drySampleI = j + wetBeginIndex;
-        //        auto&& resultSample = wetSound.pcmData[drySampleI];
-        //
-        //
-        //        if (lfoCurrent < 0) {
-        //            lfoCurrent = (-lfoCurrent);
-        //        }
-        //
-        //        //lfoCurrent = (lfoCurrent + 1);
-        //
-        //        //spdlog::info(lfoCurrent);
-        //
-        //        counter += lfoCurrent;
-        //        if (counter <= 1) {
-        //            //spdlog::info("a");
-        //        } else {
-        //            currentIndex = drySampleI;
-        //            counter = 0.0f;
-        //            //spdlog::info("b");
-        //        }
-        //
-        //        resultSample = drySoundData[(size)currentIndex] * wetNormalized;
-        //    }
-        //} else { // bipolar
+        if (modulation == Modulation::unipolar) {
+            double counter = 0.0f;
+            for (size j = 0; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
+                auto&& lfoCurrent = (lfo.RenderAudio().normal);
+                auto&& drySampleI = j + wetBeginIndex;
+                auto&& resultSample = wetSound.pcmData[drySampleI];
+        
+        
+                if (lfoCurrent < 0) {
+                    lfoCurrent = (-lfoCurrent);
+                }
+        
+                //lfoCurrent = (lfoCurrent + 1);
+        
+                //spdlog::info(lfoCurrent);
+        
+                counter += lfoCurrent;
+                if (counter <= 1) {
+                    currentIndex += lfoCurrent;
+                } else {
+                    currentIndex = drySampleI;
+                    counter = 0.0f;
+                    //spdlog::info("b");
+                }
+        
+                resultSample = drySoundData[(size)currentIndex] * wetNormalized;
+            }
+        } else { // bipolar
             for (size j = 0; currentIndex < cachedDrySoundSize && j < cachedDrySoundSize; ++j) {
                 auto&& lfoCurrent = (lfo.RenderAudio().normal) + 1;
                 auto&& drySampleI = j + wetBeginIndex;
@@ -103,7 +103,7 @@ void ChorusAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
 
                 resultSample = drySoundData[(size)currentIndex] * wetNormalized;
             }
-        //}
+        }
 
 
         //spdlog::info("i: {}, j: {}", currentIndex, j);
