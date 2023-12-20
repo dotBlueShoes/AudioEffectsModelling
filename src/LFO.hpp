@@ -42,8 +42,8 @@ private:
 	double sampleRate = 0.0f;			// Sample Rate.
 
 public:
-	Waveform waveform;
-	double frequency;
+	Waveform waveform = Waveform::sine;
+	double frequency = 0.98f;
 
 	void Initialize(const Waveform& newWaveform, const double& newFrequency);
 

@@ -67,12 +67,16 @@ void DelayAudioEffect::DisplayEffectWindow()
 
     ImGui::Begin(windowTitle); 
 
-    
+    ImGui::Text("Delays the initial sound by time set");
     ImGui::SliderInt("Delay [ms]", &delay, 0, 1000);
 
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("Echo");
     ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
     ImGui::SliderInt("Iterations [-]", &iterations, 1, 20);
 
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("Mixer");
     ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
     ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
 

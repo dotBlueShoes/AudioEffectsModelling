@@ -92,10 +92,20 @@ void DistortionAudioEffect::DisplayEffectWindow()
 
     ImGui::Begin(windowTitle); 
 
-    ImGui::SliderInt("Type [0, 1]", &type, 0, 2);
-    ImGui::SliderFloat("Gain [-]", &gain, 0, 10);
-    ImGui::SliderFloat("Parameter k [-]", &kParameter, 0, 2);
+    ImGui::Text("Distortion algorithm");
+    ImGui::SliderInt("Type [0, 2]", &type, 0, 2);
 
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("How much overdrive is being produced");
+    ImGui::SliderFloat("Gain [-]", &gain, 0, 10);
+
+    if (type == 2) {
+        ImGui::Dummy(guiControlOffset);
+        ImGui::SliderFloat("Parameter k [-]", &kParameter, 0, 2);
+    }
+
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("Mixer");
     ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
     ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
 

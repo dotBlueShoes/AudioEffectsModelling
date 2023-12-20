@@ -5,6 +5,8 @@
 #include "Math.hpp"
 #include "LFO.hpp"
 
+const ImVec2 guiControlOffset(0, 2);
+
 class AudioEffect
 {
 protected:

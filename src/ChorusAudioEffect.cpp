@@ -213,13 +213,18 @@ void ChorusAudioEffect::DisplayEffectWindow()
     }
     
 
-
+    ImGui::Text("Makes the wavering sound faster or slower");
     ImGui::SliderFloat("SampleRate [-]", &lfoSampleRate, 1, 10);
+
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("How much effect we get");
 
     switch (type) {
         case ModulatedDelayType::flanger: {
             ImGui::SliderFloat("Depth [ms]", &depth, 2, 7);
 
+            ImGui::Dummy(guiControlOffset);
+            ImGui::Text("Echo");
             ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
             ImGui::SliderInt("Feedback Iterations [-]", &feedbackIterations, 0, 20);
         } break;
@@ -228,19 +233,31 @@ void ChorusAudioEffect::DisplayEffectWindow()
         } break;
         case ModulatedDelayType::chorus: {
             ImGui::SliderFloat("Depth [ms]", &depth, 1, 30);
+
+            ImGui::Dummy(guiControlOffset);
+            ImGui::Text("Delays the second playing instrument by said time");
             ImGui::SliderFloat("Delay [ms]", &delay, 1, 30);
         } break;
         default:
             ImGui::SliderFloat("Depth [ms]", &depth, 1, 30);
+
+            ImGui::Dummy(guiControlOffset);
+            ImGui::Text("Delays the second playing instrument by said time");
             ImGui::SliderFloat("Delay [ms]", &delay, 0, 30);
 
+            ImGui::Dummy(guiControlOffset);
+            ImGui::Text("Changes inner LFO algorithm");
             // Use ImGuiSliderFlags_NoInput flag to disable CTRL+Click here.
             ImGui::SliderInt("Waveform", &waveform, 0, waveformTypeCount - 1, waveformName);
             ImGui::SliderInt("Modulation", &modulation, 0, modulationTypeCount - 1, modulationName);
 
+            ImGui::Dummy(guiControlOffset);
+            ImGui::Text("Echo");
             ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
             ImGui::SliderInt("Feedback Iterations [-]", &feedbackIterations, 0, 20);
 
+            ImGui::Dummy(guiControlOffset);
+            ImGui::Text("Mixer");
             ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
             ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
     }

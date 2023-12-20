@@ -32,7 +32,7 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
 
     // Define min and max frequencies for each APF stage
     const double minFrequencies[PHASER_STAGES] = { APF_0_MIN_FREQUENCY, APF_1_MIN_FREQUENCY, APF_2_MIN_FREQUENCY, APF_3_MIN_FREQUENCY, APF_4_MIN_FREQUENCY, APF_5_MIN_FREQUENCY };
-    const double maxFrequencies[PHASER_STAGES] = { APF_0_MAX_FREQUENCY, APF_1_MAX_FREQUENCY,  APF_2_MAX_FREQUENCY, APF_3_MAX_FREQUENCY, APF_4_MAX_FREQUENCY, APF_5_MAX_FREQUENCY};
+    const double maxFrequencies[PHASER_STAGES] = { APF_0_MAX_FREQUENCY, APF_1_MAX_FREQUENCY,  APF_2_MAX_FREQUENCY, APF_3_MAX_FREQUENCY, APF_4_MAX_FREQUENCY, APF_5_MAX_FREQUENCY };
 
     // Feedback sample storage
     float feedbackSample = 0.0f;
@@ -47,12 +47,16 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
         double modulatedValue = lfoCurrent * intensityScale;
 
 
-        for (auto& filter : allPassFilter) {
-            filter.Reset(44100);
+        //for (auto& filter : allPassFilter) {
+        //    filter.Reset(44100);
+        //}
+
+        for (size i = 0; i < stages * 2; ++i) {
+            allPassFilter[i].Reset(44100);
         }
 
         // Modulate the frequency of each all-pass filter based on the LFO value
-        for (size stage = 0; stage < PHASER_STAGES; ++stage) {
+        for (size stage = 0; stage < stages * 2; ++stage) {
             double modulatedFrequency = ModulateFrequency(modulatedValue, minFrequencies[stage], maxFrequencies[stage]);
             allPassFilter[stage].fc = modulatedFrequency;
             allPassFilter[stage].CalculateFilterCoefficients();
@@ -64,13 +68,12 @@ void PhaserAudioEffect::applyEffect(const size& originalSoundSize, SoundIO::Read
 
         float wetSample = inputSample; // Start with the input sample
 
-        for (auto& filter : allPassFilter) {
-            //spdlog::info("before norm sample : {}", wetSample);
-            wetSample = filter.process(wetSample);
-           /* if (wetSample == wetSample)
-            {
-                spdlog::info("before norm sample : {}", wetSample);
-            }*/
+        //for (auto& filter : allPassFilter) {
+        //    wetSample = filter.process(wetSample);
+        //}
+
+        for (size i = 0; i < stages * 2; ++i) {
+            wetSample = allPassFilter[i].process(wetSample);
         }
 
         // Store the output for feedback
@@ -104,16 +107,28 @@ void PhaserAudioEffect::DisplayEffectWindow()
     
     //ImGui::SliderInt("Rate [ms]", &lfoSampleRate, 0, 1000);
 
+    ImGui::Text("Makes the wavering sound faster or slower");
     ImGui::SliderFloat("SampleRate [-]", &lfoSampleRate, 1, 10);
+
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("How much effect we get");
     ImGui::SliderFloat("Depth [%]", &depth, 0, 100);
 
-    ImGui::SliderFloat("Offset [-]", &offset, -1.0, 1.0);
+    //ImGui::SliderFloat("Offset [-]", &offset, -1.0, 1.0);
+
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("Applied feedback (without delay)");
     ImGui::SliderFloat("Intensity [%]", &intensity, 0, 100);
+
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("How many all-pass filters will be used. Two for each stage");
     ImGui::SliderInt("Stages [ms]", &stages, 1, 3);
 
-    ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
-    ImGui::SliderInt("Feedback Iterations [-]", &feedbackIterations, 0, 20);
+    //ImGui::SliderFloat("Feedback [%]", &feedback, 0, 100);
+    //ImGui::SliderInt("Feedback Iterations [-]", &feedbackIterations, 0, 20);
 
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("Mixer");
     ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
     ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
 

@@ -86,14 +86,20 @@ void ReverbAudioEffect::DisplayEffectWindow()
 
     ImGui::Begin(windowTitle); 
 
+    // No brightness setting ??
+
+    ImGui::Text("Different delay values simulate different rooms");
     ImGui::SliderInt("Delay 1 [sam]", &delay1, 0, 500);
     ImGui::SliderInt("Delay 2 [sam]", &delay2, 0, 500);
     ImGui::SliderInt("Delay 3 [sam]", &delay3, 0, 500);
     ImGui::SliderInt("Delay 4 [sam]", &delay4, 0, 500);
 
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("How long will it take to decay - simulates longer and smaller enviroments");
     ImGui::SliderFloat("Decay [-]", &RT60, 0, 5);
-    //ImGui::SliderFloat("Decay [-]", &decay, 0, 1);
 
+    ImGui::Dummy(guiControlOffset);
+    ImGui::Text("Echo");
     ImGui::SliderFloat("Wet [%]", &wet, 0, 100);
     ImGui::SliderFloat("Dry [%]", &dry, 0, 100);
 
